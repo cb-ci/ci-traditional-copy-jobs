@@ -167,7 +167,7 @@ Overwrites the destination job and uses an API token to reload the target contro
   --force \
   --jenkins-url-target "https://jenkins.staging.example.com" \
   --jenkins-user "api-user" \
-  --jenkins-token "11abcdef1234567890abcdef1234567890ab"
+  --jenkins-token "11abcdef....."
 ```
 
 #### 4. Dry Run
