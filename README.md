@@ -9,6 +9,76 @@ This repository contains scripts to copy Jenkins jobs from a source controller t
 
 ---
 
+## Workflows
+
+### `copy-jenkins-jobs.sh` (SCP Transfer)
+
+Data flows through the admin's machine (`scp -3`).
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Local as Admin Laptop
+    participant Source as Source Controller
+    participant Target as Target Controller
+
+    note over Local, Target: copy-jenkins-jobs.sh (Transfer via Local)
+
+    Local->>Source: SSH: Check if job exists
+    Local->>Target: SSH: Check if job exists (skip if present unless --force)
+    
+    Local->>Source: SSH: Create tarball (mktemp + tar)
+    activate Source
+    Source-->>Local: archive_path.tar.gz
+    deactivate Source
+
+    note right of Local: scp -3 transfers data<br/>Source -> Local -> Target
+    Local->>Source: SCP: Read archive
+    activate Source
+    Local->>Target: SCP: Write archive
+    activate Target
+    Source-->>Local: Data Stream
+    deactivate Source
+    Local-->>Target: Data Stream
+    deactivate Target
+
+    Local->>Target: SSH: Extract tarball & chown
+    Local->>Target: HTTP: Reload Configuration (optional)
+    
+    Local->>Source: SSH: Cleanup temp files
+    Local->>Target: SSH: Cleanup temp files
+```
+
+### `sync-jobs-rsync.sh` (Rsync Push)
+
+Data flows directly between controllers. Source authenticates to Target using the Admin's SSH Agent.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Local as Admin Laptop
+    participant Source as Source Controller
+    participant Target as Target Controller
+
+    note over Local, Target: sync-jobs-rsync.sh (Direct Push using Agent Forwarding)
+
+    note left of Local: SSH Agent has keys<br/>for Source & Target
+    
+    Local->>Source: SSH -A (Agent Fwd): Connect
+    activate Source
+    
+    note right of Source: Source Authenticates to Target<br/>using Local's Answer
+    Source->>Target: SSH: Start rsync server
+    activate Target
+    
+    Source->>Target: RSYNC: Push Data (Delta Transfer)
+    Target-->>Source: Acknowledgement
+    deactivate Target
+    
+    Source-->>Local: Exit Status
+    deactivate Source
+```
+
 ## `copy-jenkins-jobs.sh`
 
 This is the main script for copying jobs using tarball archives.
