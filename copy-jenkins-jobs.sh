@@ -17,8 +17,8 @@ set -Eeo pipefail
 # --- Default Configuration ---
 SOURCE_JENKINS_HOME="/var/jenkins_home"
 TARGET_JENKINS_HOME="/var/jenkins_home"
-SSH_PORT_SOURCE="2221"
-SSH_PORT_TARGET="2222"
+SSH_PORT_SOURCE="22"
+SSH_PORT_TARGET="22"
 JENKINS_OWNER="jenkins"
 DRY_RUN=false
 VERBOSE=false
