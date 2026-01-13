@@ -1,5 +1,5 @@
 # Dockerfile to create a Jenkins image with SSH enabled
-FROM jenkins/jenkins:lts-jdk17
+FROM jenkins/jenkins:lts
 
 # Switch to root to install packages
 USER root
