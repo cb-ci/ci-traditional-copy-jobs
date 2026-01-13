@@ -96,13 +96,16 @@ This is the main script for copying jobs using tarball archives.
 ```
 
 **Required:**
+```
   `--source-host <host>`          Source Jenkins controller hostname or IP.
   `--target-host <host>`          Target Jenkins controller hostname or IP.
   `--source-user <user>`          SSH user for the source host.
   `--target-user <user>`          SSH user for the target host.
   `--job-path <path>`             Subpath of the job to copy (e.g., "teamA/job1"). Can be specified multiple times.
+  ```
 
 **Optional:**
+```
   `--source-jenkins-home <path>`  Path to Jenkins home on the source. (Default: /var/jenkins_home)
   `--target-jenkins-home <path>`  Path to Jenkins home on the target. (Default: /var/jenkins_home)
   `--ssh-port-source <port>`      SSH port for the source host (Default: 22).
@@ -117,7 +120,7 @@ This is the main script for copying jobs using tarball archives.
   `--dry-run`                     Show what would be done without making changes.
   `--verbose`                     Enable verbose logging.
   `--help`                        Display this help message.
-
+```
 
 ### Examples
 
@@ -203,19 +206,23 @@ This script uses `rsync` over SSH to synchronize jobs. It is more efficient for 
 ```
 
 **Required:**
+```
   `--source-host <host>`          Source Jenkins controller hostname or IP.
   `--target-host <host>`          Target Jenkins controller hostname or IP.
   `--source-user <user>`          SSH user for the source host.
   `--target-user <user>`          SSH user for the target host.
   `--job-path <path>`             Subpath of the job to sync.
+ ```
 
 **Optional:**
+```
   `--exclude <pattern>`           Rsync exclude pattern (e.g., 'builds/', 'workspace/').
   `--delete`                      Delete extraneous files on the target (`rsync --delete`).
   `--dry-run`                     Show what would be done.
   `--verbose`                     Enable verbose logging.
   `--ssh-port-source <port>`      (Default: 22)
   `--ssh-port-target <port>`      (Default: 22)
+ ```
 
 ### Examples
 
