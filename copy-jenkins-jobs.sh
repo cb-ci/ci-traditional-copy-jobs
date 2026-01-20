@@ -221,7 +221,7 @@ for job_path in "${JOB_PATHS[@]}"; do
   ssh $SSH_OPTS_SOURCE "$SOURCE_USER@$SOURCE_HOST" \
     "tar -czpf '$tmp_archive_source.tar.gz' -C '$(dirname "$full_source_path")' '$(basename "$job_path")'"
   verbose_log "Source archive created: $tmp_archive_source.tar.gz"
-  set -x
+
   # 4. Transfer archive to TARGET
   # shellcheck disable=SC2086
   tmp_archive_target=$(ssh $SSH_OPTS_TARGET "$TARGET_USER@$TARGET_HOST" "mktemp -u")
