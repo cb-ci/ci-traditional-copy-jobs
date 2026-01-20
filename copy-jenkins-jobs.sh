@@ -24,6 +24,8 @@ DRY_RUN=false
 VERBOSE=false
 FORCE=false
 JOB_PATHS=()
+#SUDO="sudo su - "
+SUDO=""
 
 # --- Script self-awareness ---
 SCRIPT_NAME=$(basename "$0")
@@ -51,12 +53,12 @@ cleanup() {
   if [ ${#TEMP_FILES_SOURCE[@]} -gt 0 ]; then
     verbose_log "Removing temp files on SOURCE: ${TEMP_FILES_SOURCE[*]}"
     # shellcheck disable=SC2086
-    ssh $SSH_OPTS_SOURCE "$SOURCE_USER@$SOURCE_HOST" "rm -f ${TEMP_FILES_SOURCE[*]}" || log "Warning: Failed to clean up on source."
+    ssh $SSH_OPTS_SOURCE "$SOURCE_USER@$SOURCE_HOST" "${SUDO} rm -f ${TEMP_FILES_SOURCE[*]}" || log "Warning: Failed to clean up on source."
   fi
   if [ ${#TEMP_FILES_TARGET[@]} -gt 0 ]; then
     verbose_log "Removing temp files on TARGET: ${TEMP_FILES_TARGET[*]}"
     # shellcheck disable=SC2086
-    ssh $SSH_OPTS_TARGET "$TARGET_USER@$TARGET_HOST" "rm -f ${TEMP_FILES_TARGET[*]}" || log "Warning: Failed to clean up on target."
+    ssh $SSH_OPTS_TARGET "$TARGET_USER@$TARGET_HOST" "${SUDO} rm -f ${TEMP_FILES_TARGET[*]}" || log "Warning: Failed to clean up on target."
   fi
   log "Cleanup complete."
 }
@@ -179,7 +181,7 @@ for job_path in "${JOB_PATHS[@]}"; do
   # 1. Verify job exists on SOURCE
   verbose_log "Verifying source path: $SOURCE_USER@$SOURCE_HOST:$full_source_path"
   # shellcheck disable=SC2086
-  if ! ssh $SSH_OPTS_SOURCE "$SOURCE_USER@$SOURCE_HOST" "test -d '$full_source_path'"; then
+  if ! ssh $SSH_OPTS_SOURCE "$SOURCE_USER@$SOURCE_HOST" "${SUDO} test -d '$full_source_path'"; then
     log "Warning: Source job directory not found: '$full_source_path'. Skipping."
     SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
     continue
@@ -188,7 +190,7 @@ for job_path in "${JOB_PATHS[@]}"; do
   # 2. Check if job exists on TARGET
   verbose_log "Verifying target path: $TARGET_USER@$TARGET_HOST:$full_target_path"
   # shellcheck disable=SC2086
-  if ssh $SSH_OPTS_TARGET "$TARGET_USER@$TARGET_HOST" "test -d '$full_target_path'"; then
+  if ssh $SSH_OPTS_TARGET "$TARGET_USER@$TARGET_HOST" "${SUDO} test -d '$full_target_path'"; then
     if [ "$FORCE" = false ]; then
       log "Warning: Job '$job_path' already exists on target. Use --force to overwrite. Skipping."
       SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
@@ -208,7 +210,7 @@ for job_path in "${JOB_PATHS[@]}"; do
   # 3. Create archive on SOURCE
   # Using mktemp to create a secure temporary file name for the archive
   # shellcheck disable=SC2086
-  tmp_archive_source=$(ssh $SSH_OPTS_SOURCE "$SOURCE_USER@$SOURCE_HOST" "mktemp -u")
+  tmp_archive_source=$(ssh $SSH_OPTS_SOURCE "$SOURCE_USER@$SOURCE_HOST" "${SUDO} mktemp -u")
   if [ -z "$tmp_archive_source" ]; then
       die "Failed to create a temporary file name on source host."
   fi
@@ -219,12 +221,12 @@ for job_path in "${JOB_PATHS[@]}"; do
   # -p flag preserves permissions
   # shellcheck disable=SC2086
   ssh $SSH_OPTS_SOURCE "$SOURCE_USER@$SOURCE_HOST" \
-    "tar -czpf '$tmp_archive_source.tar.gz' -C '$(dirname "$full_source_path")' '$(basename "$job_path")'"
-  verbose_log "Source archive created: $tmp_archive_source.tar.gz"
+    "${SUDO} tar -czpf '$TEMP_FILES_SOURCE' -C '$(dirname "$full_source_path")' '$(basename "$job_path")'"
+  verbose_log "Source archive created: $TEMP_FILES_SOURCE"
 
   # 4. Transfer archive to TARGET
   # shellcheck disable=SC2086
-  tmp_archive_target=$(ssh $SSH_OPTS_TARGET "$TARGET_USER@$TARGET_HOST" "mktemp -u")
+  tmp_archive_target=$(ssh $SSH_OPTS_TARGET "$TARGET_USER@$TARGET_HOST" "${SUDO} mktemp -u")
   if [ -z "$tmp_archive_target" ]; then
       die "Failed to create a temporary file name on target host."
   fi
@@ -236,17 +238,17 @@ for job_path in "${JOB_PATHS[@]}"; do
  # scp $SCP_OPTS_SOURCE $SCP_OPTS_TARGET "$SOURCE_USER@$SOURCE_HOST:'$tmp_archive_source.tar.gz'" \
  #   "$TARGET_USER@$TARGET_HOST:'$tmp_archive_target.tar.gz'"
   scp -3 -i ./jenkins_test_key \
-      scp://$SOURCE_USER@$SOURCE_HOST:$SSH_PORT_SOURCE//$tmp_archive_source.tar.gz \
-      scp://$TARGET_USER@$TARGET_HOST:$SSH_PORT_TARGET//$tmp_archive_target.tar.gz
-  verbose_log "Archive transferred to: $tmp_archive_target.tar.gz"
+      scp://$SOURCE_USER@$SOURCE_HOST:$SSH_PORT_SOURCE//$TEMP_FILES_SOURCE \
+      scp://$TARGET_USER@$TARGET_HOST:$SSH_PORT_TARGET//$TEMP_FILES_TARGET
+  verbose_log "Archive transferred to: $TEMP_FILES_TARGET"
 
   # 5. Extract on TARGET and set permissions
   log "Extracting archive on target..."
   # shellcheck disable=SC2086
   ssh $SSH_OPTS_TARGET "$TARGET_USER@$TARGET_HOST" \
-    "mkdir -p '$target_parent_dir' && \
-     tar -xzpf '$tmp_archive_target.tar.gz' -C '$target_parent_dir' && \
-     chown -R '$JENKINS_OWNER:$JENKINS_OWNER' '$full_target_path'"
+    "${SUDO} mkdir -p '$target_parent_dir' && \
+     ${SUDO} tar -xzpf '$TEMP_FILES_TARGET' -C '$target_parent_dir' && \
+     ${SUDO} chown -R '$JENKINS_OWNER:$JENKINS_OWNER' '$full_target_path'"
   
   log "Successfully copied job '$job_path'."
   COPIED_COUNT=$((COPIED_COUNT + 1))
