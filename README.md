@@ -251,7 +251,7 @@ This will make the target directory an exact mirror of the source, DELETING any 
   --delete
 ```
 
-Samle output log:
+Sample output log:
 ```
 ➜  ci-copy-jobs git:(main) ✗ ./run_tests_sync-jobs-rsync.sh 
 
@@ -279,7 +279,7 @@ Generating public/private rsa key pair.
 Your identification has been saved in ./jenkins_test_key_target
 Your public key has been saved in ./jenkins_test_key_target.pub
 The key fingerprint is:
-SHA256:CdhQnDffU/WnfsSrHbOVVoJObqj7OvMbMCHCzAVY/zo XXX@MAC-XXX-2.local
+SHA256:XXXXXXX/zo XXX@MAC-XXX-2.local
 The key's randomart image is:
 +---[RSA 4096]----+
 |   o++o.       ..|
@@ -309,8 +309,8 @@ Identity added: ./jenkins_test_key_target (XXX@MAC-XXX-2.local)
  => [auth] jenkins/jenkins:pull token for registry-1.docker.io                                                                                                                     0.0s
  => [jenkins-target internal] load .dockerignore                                                                                                                                   0.0s
  => => transferring context: 2B                                                                                                                                                    0.0s
- => [jenkins-source 1/8] FROM docker.io/jenkins/jenkins:lts@sha256:1e407df1a9bcb122cc4d71d4ce44d2e3b2be31af004c157453a939f13ae691c7                                                0.0s
- => => resolve docker.io/jenkins/jenkins:lts@sha256:1e407df1a9bcb122cc4d71d4ce44d2e3b2be31af004c157453a939f13ae691c7                                                               0.0s
+ => [jenkins-source 1/8] FROM docker.io/jenkins/jenkins:lts@sha256:XXX                                                0.0s
+ => => resolve docker.io/jenkins/jenkins:lts@sha256:XXX                                                               0.0s
  => CACHED [jenkins-target 2/8] RUN apt-get update && apt-get install -y openssh-server rsync                                                                                      0.0s
  => CACHED [jenkins-target 3/8] RUN echo 'root:root' | chpasswd                                                                                                                    0.0s
  => CACHED [jenkins-target 4/8] RUN mkdir -p /var/run/sshd                                                                                                                         0.0s
@@ -320,13 +320,13 @@ Identity added: ./jenkins_test_key_target (XXX@MAC-XXX-2.local)
  => CACHED [jenkins-target 8/8] RUN echo "#!/bin/bash" > /usr/local/bin/start-jenkins-sshd.sh &&     echo "/usr/sbin/sshd -D &" >> /usr/local/bin/start-jenkins-sshd.sh &&     ec  0.0s
  => [jenkins-source] exporting to docker image format                                                                                                                              9.1s
  => => exporting layers                                                                                                                                                            0.0s
- => => exporting manifest sha256:57d4f8e1d4d8cbf21134499650f2f8ff7f3f97c67ebbea64a2f6495508e59d7c                                                                                  0.0s
- => => exporting config sha256:0f1c0622ab20015a80d46dfe03534dcbb042534e1fe12b4edaea6b2142bd58e5                                                                                    0.1s
+ => => exporting manifest sha256:XXX                                                                                  0.0s
+ => => exporting config sha256:XXX                                                                                    0.1s
  => => sending tarball                                                                                                                                                             9.0s
  => [jenkins-target] exporting to docker image format                                                                                                                              9.1s
  => => exporting layers                                                                                                                                                            0.0s
- => => exporting manifest sha256:6d08b2534e217bc11d1b521019d8a475a0b096259c3c9807c343acf9f865fdee                                                                                  0.1s
- => => exporting config sha256:2eef0983acd2bd11d187594c34bc0564f9ce8a826583726521992a3627a450ca                                                                                    0.0s
+ => => exporting manifest sha256:XXX                                                                                  0.1s
+ => => exporting config sha256:XXX                                                                                    0.0s
  => => sending tarball                                                                                                                                                             9.0s
  => importing to docker                                                                                                                                                            0.0s
  => importing to docker                                                                                                                                                            0.0s
