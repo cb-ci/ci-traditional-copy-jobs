@@ -251,7 +251,7 @@ This will make the target directory an exact mirror of the source, DELETING any 
   --delete
 ```
 
-Sample output log:
+Test output log:
 ```
 ➜  ci-copy-jobs git:(main) ✗ ./run_tests_sync-jobs-rsync.sh 
 
@@ -262,7 +262,7 @@ Generating public/private rsa key pair.
 Your identification has been saved in ./jenkins_test_key_source
 Your public key has been saved in ./jenkins_test_key_source.pub
 The key fingerprint is:
-SHA256:jCFPNJ2tGxAWdOJhf4w974HocyTW4zR+RIjFgIptYeM XXX@MAC-XXX-2.local
+SHA256:XXX XXX@MAC-XXX-2.local
 The key's randomart image is:
 +---[RSA 4096]----+
 |     .@=o=.      |
