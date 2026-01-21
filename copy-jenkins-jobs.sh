@@ -237,7 +237,8 @@ for job_path in "${JOB_PATHS[@]}"; do
 
  # scp $SCP_OPTS_SOURCE $SCP_OPTS_TARGET "$SOURCE_USER@$SOURCE_HOST:'$tmp_archive_source.tar.gz'" \
  #   "$TARGET_USER@$TARGET_HOST:'$tmp_archive_target.tar.gz'"
-  scp -3 -i ./jenkins_test_key \
+  #-i ./jenkins_test_key
+  scp -3 \
       scp://$SOURCE_USER@$SOURCE_HOST:$SSH_PORT_SOURCE//$TEMP_FILES_SOURCE \
       scp://$TARGET_USER@$TARGET_HOST:$SSH_PORT_TARGET//$TEMP_FILES_TARGET
   verbose_log "Archive transferred to: $TEMP_FILES_TARGET"
