@@ -63,7 +63,7 @@ cleanup() {
   log "Cleanup complete."
 }
 
-trap cleanup EXIT
+#trap cleanup EXIT
 
 # --- Usage Information ---
 usage() {
