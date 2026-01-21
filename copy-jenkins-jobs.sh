@@ -221,7 +221,7 @@ for job_path in "${JOB_PATHS[@]}"; do
   # -p flag preserves permissions
   # shellcheck disable=SC2086
   ssh $SSH_OPTS_SOURCE "$SOURCE_USER@$SOURCE_HOST" \
-    "${SUDO} tar -czpf '$TEMP_FILES_SOURCE' -C '$(dirname "$full_source_path")' '$(basename "$job_path")'"
+    "${SUDO} tar -czpf '$TEMP_FILES_SOURCE' -C '$(dirname "$full_source_path")' '$(basename "$job_path")' && chmod 755 /tmp/$TEMP_FILES_SOURCE "
   verbose_log "Source archive created: $TEMP_FILES_SOURCE"
 
   # 4. Transfer archive to TARGET
