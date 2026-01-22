@@ -24,7 +24,7 @@ DRY_RUN=false
 VERBOSE=false
 FORCE=false
 JOB_PATHS=()
-#SUDO="sudo su - "
+#SUDO="sudo su -i "
 SUDO=""
 
 # --- Script self-awareness ---
@@ -63,7 +63,7 @@ cleanup() {
   log "Cleanup complete."
 }
 
-#trap cleanup EXIT
+trap cleanup EXIT
 
 # --- Usage Information ---
 usage() {
@@ -221,7 +221,7 @@ for job_path in "${JOB_PATHS[@]}"; do
   # -p flag preserves permissions
   # shellcheck disable=SC2086
   ssh $SSH_OPTS_SOURCE "$SOURCE_USER@$SOURCE_HOST" \
-    "${SUDO} tar -czpf '$TEMP_FILES_SOURCE' -C '$(dirname "$full_source_path")' '$(basename "$job_path")' && chmod 755 /tmp/$TEMP_FILES_SOURCE "
+    "${SUDO} tar -czpf '$TEMP_FILES_SOURCE' -C '$(dirname "$full_source_path")' '$(basename "$job_path")' && chmod 755 $TEMP_FILES_SOURCE "
   verbose_log "Source archive created: $TEMP_FILES_SOURCE"
 
   # 4. Transfer archive to TARGET
@@ -238,9 +238,9 @@ for job_path in "${JOB_PATHS[@]}"; do
  # scp $SCP_OPTS_SOURCE $SCP_OPTS_TARGET "$SOURCE_USER@$SOURCE_HOST:'$tmp_archive_source.tar.gz'" \
  #   "$TARGET_USER@$TARGET_HOST:'$tmp_archive_target.tar.gz'"
   #-i ./jenkins_test_key
-  scp -3 \
-      scp://$SOURCE_USER@$SOURCE_HOST:$SSH_PORT_SOURCE//$TEMP_FILES_SOURCE \
-      scp://$TARGET_USER@$TARGET_HOST:$SSH_PORT_TARGET//$TEMP_FILES_TARGET
+  scp -3 -i $SSH_KEY_SOURCE \
+      scp://$SOURCE_USER@$SOURCE_HOST:$SSH_PORT_SOURCE:/$TEMP_FILES_SOURCE \
+      scp://$TARGET_USER@$TARGET_HOST:$SSH_PORT_TARGET:/$TEMP_FILES_TARGET
   verbose_log "Archive transferred to: $TEMP_FILES_TARGET"
 
   # 5. Extract on TARGET and set permissions
