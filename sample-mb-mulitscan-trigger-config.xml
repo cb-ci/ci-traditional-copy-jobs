@@ -1,0 +1,61 @@
+<org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject plugin="workflow-multibranch@821.vc3b_4ea_780798">
+    <actions/>
+    <description/>
+    <properties>
+        <com.cloudbees.hudson.plugins.folder.properties.EnvVarsFolderProperty plugin="cloudbees-folders-plus@3.518">
+            <properties/>
+        </com.cloudbees.hudson.plugins.folder.properties.EnvVarsFolderProperty>
+    </properties>
+    <folderViews class="jenkins.branch.MultiBranchProjectViewHolder" plugin="branch-api@2.1268.v044a_87612da_8">
+        <owner class="org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject" reference="../.."/>
+    </folderViews>
+    <healthMetrics/>
+    <icon class="jenkins.branch.MetadataActionFolderIcon" plugin="branch-api@2.1268.v044a_87612da_8">
+        <owner class="org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject" reference="../.."/>
+    </icon>
+    <orphanedItemStrategy class="com.cloudbees.hudson.plugins.folder.computed.DefaultOrphanedItemStrategy" plugin="cloudbees-folder@6.1073.va_7888eb_dd514">
+        <pruneDeadBranches>true</pruneDeadBranches>
+        <daysToKeep>-1</daysToKeep>
+        <numToKeep>-1</numToKeep>
+        <abortBuilds>false</abortBuilds>
+    </orphanedItemStrategy>
+    <triggers>
+        <com.igalg.jenkins.plugins.mswt.trigger.ComputedFolderWebHookTrigger plugin="multibranch-scan-webhook-trigger@1.0.11">
+            <spec/>
+            <token>sssssss</token>
+        </com.igalg.jenkins.plugins.mswt.trigger.ComputedFolderWebHookTrigger>
+    </triggers>
+    <disabled>false</disabled>
+    <sources class="jenkins.branch.MultiBranchProject$BranchSourceList" plugin="branch-api@2.1268.v044a_87612da_8">
+        <data>
+            <jenkins.branch.BranchSource>
+                <source class="jenkins.scm.impl.SingleSCMSource" plugin="scm-api@724.v7d839074eb_5c">
+                    <id>1</id>
+                    <name/>
+                    <scm class="hudson.plugins.git.GitSCM" plugin="git@5.8.0">
+                        <configVersion>2</configVersion>
+                        <userRemoteConfigs>
+                            <hudson.plugins.git.UserRemoteConfig/>
+                        </userRemoteConfigs>
+                        <branches>
+                            <hudson.plugins.git.BranchSpec>
+                                <name>*/master</name>
+                            </hudson.plugins.git.BranchSpec>
+                        </branches>
+                        <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+                        <submoduleCfg class="empty-list"/>
+                        <extensions/>
+                    </scm>
+                </source>
+                <strategy class="jenkins.branch.DefaultBranchPropertyStrategy">
+                    <properties class="empty-list"/>
+                </strategy>
+            </jenkins.branch.BranchSource>
+        </data>
+        <owner class="org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject" reference="../.."/>
+    </sources>
+    <factory class="org.jenkinsci.plugins.workflow.multibranch.WorkflowBranchProjectFactory">
+        <owner class="org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject" reference="../.."/>
+        <scriptPath>Jenkinsfile</scriptPath>
+    </factory>
+</org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject>
