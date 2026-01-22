@@ -55,23 +55,6 @@ done
 # 6. Configure SSH access and create test job
 log "Configuring SSH and creating test job on SOURCE"
 
-# Configure SOURCE container: Needs Source Key public in authorized_keys (for self/test?) 
-# NO, for this test:
-# Local Machine -> Source Container (needs Source Public Key in Source's authorized_keys)
-# Source Container -> Target Container (needs Target Public Key in Target's authorized_keys? AND Source needs private key? NO)
-# WAIT. SSH Agent Forwarding means:
-# Local (has Keys) -> SSH(-A) -> Source (Socket Forwarded) -> SSH (uses Forwarded Socket) -> Target.
-# So:
-# 1. Local can SSH to Source. (Source needs Local's Key-A public in authorized_keys)
-# 2. Local can SSH to Target. (Target needs Local's Key-B public in authorized_keys)
-# 3. When Source ssh's to Target, it uses Key-B from the forwarded agent. 
-# So Target needs Key-B public in authorized_keys.
-# AND Source needs Key-A public in authorized_keys so Local can connect to it securely first.
-
-# Let's simplify and use one key pair for both if easiest, but distinct is better test.
-# SOURCE Container: Needs SSH_KEY_SOURCE_FILE.pub in authorized_keys.
-# TARGET Container: Needs SSH_KEY_TARGET_FILE.pub in authorized_keys.
-
 # setup source
 docker exec jenkins-source bash -c "mkdir -p /root/.ssh && chmod 700 /root/.ssh"
 docker cp "$SSH_KEY_SOURCE_FILE.pub" "jenkins-source:/root/.ssh/authorized_keys"

@@ -70,8 +70,8 @@ ssh-keygen -R "[localhost]:2221" > /dev/null 2>&1 || true
 ssh-keygen -R "[localhost]:2222" > /dev/null 2>&1 || true
 
 # 6. Run the copy script
-log "Running the copy-jenkins-jobs.sh script"
-./copy-jenkins-jobs.sh \
+log "Running the copy-jenkins-jobs-scp.sh script"
+./copy-jenkins-jobs-scp.sh \
   --source-host "localhost" \
   --target-host "localhost" \
   --source-user "root" \

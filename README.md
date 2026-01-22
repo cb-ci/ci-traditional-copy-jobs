@@ -4,14 +4,14 @@ This repository contains scripts to copy Jenkins jobs from a source controller t
 
 ## Scripts
 
-1.  **`copy-jenkins-jobs.sh`**: Uses `scp` and `tar` to archive and transfer jobs. Good for simple transfers or when `rsync` is not available.
+1.  **`copy-jenkins-jobs-scp.sh`**: Uses `scp` and `tar` to archive and transfer jobs. Good for simple transfers or when `rsync` is not available.
 2.  **`sync-jobs-rsync.sh`**: Uses `rsync` over SSH. Efficient for syncing large jobs or incremental updates. Supports exclusions for build artifacts.
 
 ---
 
 ## Workflows
 
-### `copy-jenkins-jobs.sh` (SCP Transfer)
+### `copy-jenkins-jobs-scp.sh` (SCP Transfer)
 
 Data flows through the admin's machine (`scp -3`).
 
@@ -22,7 +22,7 @@ sequenceDiagram
     participant Source as Source Controller
     participant Target as Target Controller
 
-    note over Local, Target: copy-jenkins-jobs.sh (Transfer via Local)
+    note over Local, Target: copy-jenkins-jobs-scp.sh (Transfer via Local)
 
     Local->>Source: SSH: Check if job exists
     Local->>Target: SSH: Check if job exists (skip if present unless --force)
@@ -79,7 +79,7 @@ sequenceDiagram
     deactivate Source
 ```
 
-## `copy-jenkins-jobs.sh`
+## `copy-jenkins-jobs-scp.sh`
 
 This is the main script for copying jobs using tarball archives.
 
@@ -92,7 +92,7 @@ This is the main script for copying jobs using tarball archives.
 ### Usage
 
 ```sh
-./copy-jenkins-jobs.sh [OPTIONS]
+./copy-jenkins-jobs-scp.sh [OPTIONS]
 ```
 
 **Required:**
@@ -129,7 +129,7 @@ This is the main script for copying jobs using tarball archives.
 Copies the job located at `/var/jenkins_home/jobs/production-deployment`.
 
 ```sh
-./copy-jenkins-jobs.sh \
+./copy-jenkins-jobs-scp.sh \
   --source-host jenkins-prod.example.com \
   --target-host jenkins-staging.example.com \
   --source-user admin-user \
@@ -144,7 +144,7 @@ Copies the job located at `/var/jenkins_home/jobs/production-deployment`.
 Copies `nightly-builds` from the root of `jobs/` and `microservice-a` from a nested folder.
 
 ```sh
-./copy-jenkins-jobs.sh \
+./copy-jenkins-jobs-scp.sh \
   --source-host jenkins-prod.example.com \
   --target-host jenkins-staging.example.com \
   --source-user admin-user \
@@ -158,7 +158,7 @@ Copies `nightly-builds` from the root of `jobs/` and `microservice-a` from a nes
 Overwrites the destination job and uses an API token to reload the target controller's configuration.
 
 ```sh
-./copy-jenkins-jobs.sh \
+./copy-jenkins-jobs-scp.sh \
   --source-host 10.0.1.10 \
   --target-host 10.0.2.20 \
   --source-user jenkins-svc \
@@ -175,7 +175,7 @@ Overwrites the destination job and uses an API token to reload the target contro
 Preview the operations without making any changes.
 
 ```sh
-./copy-jenkins-jobs.sh \
+./copy-jenkins-jobs-scp.sh \
   --source-host jenkins-prod.example.com \
   --target-host jenkins-staging.example.com \
   --source-user admin-user \
