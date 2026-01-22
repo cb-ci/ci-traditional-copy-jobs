@@ -18,13 +18,16 @@ log() {
 # 1. Cleanup previous runs
 log "Cleaning up any previous Docker environment"
 docker-compose down -v --remove-orphans > /dev/null 2>&1 || true
-rm -f "$SSH_KEY_FILE" "$SSH_KEY_FILE.pub"
 
 # 2. Generate SSH key
-log "Generating SSH key for test"
-ssh-keygen -t rsa -b 4096 -f "$SSH_KEY_FILE" -N ""
-chmod 600 "$SSH_KEY_FILE"
-echo "SSH key generated."
+if [ ! -f "$SSH_KEY_FILE" ] || [ ! -f "$SSH_KEY_FILE.pub" ]; then
+    log "Generating SSH key for test"
+    #rm -f "$SSH_KEY_FILE" "$SSH_KEY_FILE.pub"
+    ssh-keygen -t rsa -b 4096 -f "$SSH_KEY_FILE" -N ""
+    chmod 600 "$SSH_KEY_FILE"
+    echo "SSH key generated."
+fi
+
 
 # 3. Build and start Docker containers
 log "Building and starting Docker containers"
