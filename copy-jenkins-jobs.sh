@@ -13,7 +13,7 @@
 #   Jenkins home.
 
 set -Eeo pipefail
-
+set -x
 # --- Default Configuration ---
 SOURCE_JENKINS_HOME="/var/jenkins_home"
 TARGET_JENKINS_HOME="/var/jenkins_home"
@@ -239,8 +239,8 @@ for job_path in "${JOB_PATHS[@]}"; do
  #   "$TARGET_USER@$TARGET_HOST:'$tmp_archive_target.tar.gz'"
   #-i ./jenkins_test_key
   scp -3 -i $SSH_KEY_SOURCE \
-      scp://$SOURCE_USER@$SOURCE_HOST:$SSH_PORT_SOURCE:/$TEMP_FILES_SOURCE \
-      scp://$TARGET_USER@$TARGET_HOST:$SSH_PORT_TARGET:/$TEMP_FILES_TARGET
+      scp://$SOURCE_USER@$SOURCE_HOST:$SSH_PORT_SOURCE:$TEMP_FILES_SOURCE \
+      scp://$TARGET_USER@$TARGET_HOST:$SSH_PORT_TARGET:$TEMP_FILES_TARGET
   verbose_log "Archive transferred to: $TEMP_FILES_TARGET"
 
   # 5. Extract on TARGET and set permissions
