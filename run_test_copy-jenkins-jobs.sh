@@ -119,7 +119,7 @@ log "TEST SUCCEEDED!"
 
 # 8. Cleanup
 log "Cleaning up the Docker environment"
-docker-compose down -v --remove-orphans
-rm -f "$SSH_KEY_FILE" "$SSH_KEY_FILE.pub"
+#docker-compose down -v --remove-orphans
+#rm -f "$SSH_KEY_FILE" "$SSH_KEY_FILE.pub"
 echo "Cleanup complete."
 
