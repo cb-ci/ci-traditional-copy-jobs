@@ -11,7 +11,7 @@ if [ ! -f jenkins-cli.jar ]; then
     chmod +x jenkins-cli.jar
 fi
 MY_NEW_TOKEN_ENCRYPTED=$(echo "println(hudson.util.Secret.fromString('$MY_NEW_TOKEN').getEncryptedValue())" | \
-java -jar jenkins-cli.jar -s $JENKINS_HOST -auth admin:admin_token groovy =)
+java -jar jenkins-cli.jar -s $JENKINS_HOST -auth ${JENKINS_OWNER}:${JENKINS_TOKEN} groovy =)
 
 
 # Update token in config file

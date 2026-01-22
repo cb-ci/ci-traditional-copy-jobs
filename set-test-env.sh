@@ -23,5 +23,7 @@ export SCP_OPTS="-P $SSH_PORT $OPTS_COMMON"
 # Jenkins Configuration
 export JENKINS_HOME="/var/jenkins_home"
 export JENKINS_HOST="http://$SSH_HOST:8082"
+export JENKINS_OWNER="admin"
+export JENKINS_TOKEN="admin_token"
 export TEST_JOB_MB_CONFIG_FILE="./testdata/sample-mb-mulitscan-trigger-config.xml"
 export TEST_JOB_SIMPLE_CONFIG_FILE="./testdata/sample-simple-gitlab-config.xml"
