@@ -51,9 +51,9 @@ generate_ssh_key_if_needed() {
     log "Generating SSH key $key_file"
     ssh-keygen -t rsa -b 4096 -f "$key_file" -N ""
     chmod 600 "$key_file"
-    echo "SSH key generated $key_file"
+    log "SSH key generated $key_file"
   else
-    echo "SSH key already exists $key_file"
+    log "SSH key already exists $key_file"
   fi
   log "Starting SSH Agent"
   eval "$(ssh-agent -s)"
@@ -89,22 +89,22 @@ init() {
     log "Building and starting Docker containers"
     # Force build to ensure rsync is installed
     docker-compose up -d --build
-    echo "Containers are starting in the background..."
+    log "Containers are starting in the background..."
 
     # Wait for Jenkins controllers to be ready
     log "Waiting for Jenkins controllers to be available..."
     for port in 8081 8082; do
-        echo "Waiting for Jenkins on port $port..."
+        log "Waiting for Jenkins on port $port..."
         while ! curl -s "http://localhost:$port/login" | grep -q "Sign in to Jenkins"; do
             sleep 5
         done
-        echo "Jenkins on port $port is ready."
+        log "Jenkins on port $port is ready."
     done
 
     # Configure SSH access and create test job
     log "Configuring SSH and creating test job on SOURCE"
     for container in jenkins-source jenkins-target; do
-        echo "Configuring SSH for $container"
+        log "Configuring SSH for $container"
         docker exec "$container" bash -c "mkdir -p /root/.ssh && chmod 700 /root/.ssh"
         docker cp "$SSH_KEY_FILE.pub" "$container:/root/.ssh/authorized_keys"
         docker exec "$container" bash -c "chmod 600 /root/.ssh/authorized_keys"
@@ -132,9 +132,9 @@ prepareTestJob() {
 
     log "Verifying job exists on SOURCE before copy"
     if docker exec jenkins-source ls "$JENKINS_HOME/jobs/" | grep -q "$jobName"; then
-        echo "OK: Job '$jobName' found on SOURCE."
+        log "OK: Job '$jobName' found on SOURCE."
     else
-        echo "ERROR: Job '$jobName' not found on SOURCE."
+        log "ERROR: Job '$jobName' not found on SOURCE."
         exit 1
     fi
 }
@@ -143,8 +143,7 @@ prepareTestJob() {
 verify_token_update() {
   local job_path="$1"
   
-  echo "########################"
-  echo "Verifying job: $job_path"
+  log "Verifying job: $job_path"
   
   # Show the diff between current and backup
   ssh $SSH_OPTS "$SSH_USER@$SSH_HOST" \
@@ -164,24 +163,24 @@ verifyResult() {
     local jobName=$1
     log "Verifying job on TARGET after sync"
     if docker exec jenkins-target ls "$JENKINS_HOME/jobs/" | grep -q "$jobName"; then
-        echo "SUCCESS: Job '$jobName' directory found on TARGET."
+        log "SUCCESS: Job '$jobName' directory found on TARGET."
     else
-        echo "FAILURE: Job '$jobName' directory NOT found on TARGET."
+        log "FAILURE: Job '$jobName' directory NOT found on TARGET."
         exit 1
     fi
     if docker exec jenkins-target test -f "$JENKINS_HOME/jobs/$jobName/config.xml"; then
-        echo "SUCCESS: config.xml found in job directory on TARGET."
+        log "SUCCESS: config.xml found in job directory on TARGET."
     else
-        echo "FAILURE: config.xml NOT found in job directory on TARGET."
+        log "FAILURE: config.xml NOT found in job directory on TARGET."
         exit 1
     fi
     log "Verifying job loaded in TARGET Jenkins UI (via API)"
     #Give Jenkins a moment to load the new job after the reload
     sleep 5
     if curl -s "http://localhost:8082/api/json" | grep -q "\"name\":\"$jobName\"\""; then
-        echo "SUCCESS: Job '$jobName' is visible in the Jenkins API on TARGET."
+        log "SUCCESS: Job '$jobName' is visible in the Jenkins API on TARGET."
     else
-        echo "FAILURE: Job '$jobName' is NOT visible in the Jenkins API on TARGET."
+        log "FAILURE: Job '$jobName' is NOT visible in the Jenkins API on TARGET."
         #exit 1
     fi
     log "TEST SUCCEEDED!"
