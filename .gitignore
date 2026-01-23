@@ -1,6 +1,6 @@
-/jenkins_homes/
+/tests/jenkins_homes/
 custom.md
-/jenkins_test_key
-/jenkins_test_key.pub
+/tests/jenkins_test_key
+/tests/jenkins_test_key.pub
 /.idea/
-/jenkins-cli.jar
+/tests/jenkins-cli.jar

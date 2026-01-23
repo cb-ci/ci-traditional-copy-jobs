@@ -96,7 +96,6 @@ init() {
     generate_ssh_key_if_needed "$SSH_KEY_SOURCE_FILE"
     generate_ssh_key_if_needed "$SSH_KEY_TARGET_FILE"
 
-
     log "Building and starting Docker containers"
     # Force build to ensure rsync is installed
     docker-compose up -d --build
