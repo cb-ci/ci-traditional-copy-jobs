@@ -66,9 +66,10 @@ cleanup() {
     # 1. Cleanup previous runs
     log "Cleaning up any previous Docker environment"
     docker-compose down -v --remove-orphans > /dev/null 2>&1 || true
-    rm -f "$SSH_KEY_SOURCE_FILE" "$SSH_KEY_SOURCE_FILE.pub"
-    rm -f "$SSH_KEY_TARGET_FILE" "$SSH_KEY_TARGET_FILE.pub"
-    rm -Rfv $CONTROLLER_JENKINS_HOMES_PATH/$TARGET_JENKINS_HOME/jobs/*
+    rm -f "$SSH_KEY_SOURCE_FILE" "$SSH_KEY_SOURCE_FILE.pub" || true
+    rm -f "$SSH_KEY_TARGET_FILE" "$SSH_KEY_TARGET_FILE.pub" || true
+    rm -Rfv $CONTROLLER_JENKINS_HOMES_PATH/$SOURCE_JENKINS_HOME/jobs/* || true
+    rm -Rfv $CONTROLLER_JENKINS_HOMES_PATH/$TARGET_JENKINS_HOME/jobs/* || true
     # Kill any existing ssh-agent we might have started in a previous partial run (hard to track, so rely on standard exit)
 }
 
@@ -76,7 +77,15 @@ cleanup() {
 
 
 # Build and start Docker containers
-dockerComposeUp() {
+init() {
+    # --- Test Workflow ---
+    # Cleanup previous runs
+    cleanup
+    
+    # Generate SSH keys for source and target
+    generate_ssh_key_if_needed "$SSH_KEY_SOURCE_FILE"
+    generate_ssh_key_if_needed "$SSH_KEY_TARGET_FILE"
+
     log "Building and starting Docker containers"
     # Force build to ensure rsync is installed
     docker-compose up -d --build
@@ -106,18 +115,19 @@ dockerComposeUp() {
     ssh-keygen -R "[localhost]:2222" > /dev/null 2>&1 || true
 
     # Create test jobs
-    prepareTestJob "$TEST_JOB_NAME_SIMPLE"
-    prepareTestJob "$TEST_JOB_NAME_MB"
+    prepareTestJob "$TEST_JOB_NAME_SIMPLE" "$TEST_JOB_SIMPLE_CONFIG_FILE"
+    prepareTestJob "$TEST_JOB_NAME_MB" "$TEST_JOB_MB_CONFIG_FILE"
 }   
 
 
 prepareTestJob() {
     local jobName=$1
+    local jobConfigFile=$2
     local container="jenkins-source"
     set -x
     log "Creating job '$jobName' on $container"
     docker exec $container mkdir -p "$JENKINS_HOME/jobs/$jobName"
-    docker cp "$TEST_JOB_SIMPLE_CONFIG_FILE" "$container:$JENKINS_HOME/jobs/$jobName/config.xml"
+    docker cp "$jobConfigFile" "$container:$JENKINS_HOME/jobs/$jobName/config.xml"
     docker exec $container chown -R 1000:1000 "$JENKINS_HOME/jobs/$jobName"
     # Also need to reload the source jenkins to make the job visible
     #docker exec jenkins-source curl -X POST http://localhost:8080/reload

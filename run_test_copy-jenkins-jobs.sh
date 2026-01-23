@@ -3,16 +3,9 @@ set -e
 #set -x
 # --- Configuration ---
 source ./set-test-env.sh
-# --- Test Workflow ---
-# Cleanup previous runs
-cleanup
-# Generate SSH keys for source and target
-generate_ssh_key_if_needed "$SSH_KEY_SOURCE_FILE"
-generate_ssh_key_if_needed "$SSH_KEY_TARGET_FILE"
+
 # Start docker containers
-dockerComposeUp
-
-
+init
 
 
 # 6. Run the copy script

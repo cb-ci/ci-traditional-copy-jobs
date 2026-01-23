@@ -462,12 +462,13 @@ Shared environment configuration and helper functions for all test scripts. This
 - Docker environment paths
 
 **Helper Functions:**
-- `log()` - Formatted logging output
-- `generate_ssh_key_if_needed()` - Generate SSH keys if they don't exist
-- `cleanup()` - Clean up Docker containers and temporary files
-- `dockerComposeUp()` - Start and configure Docker test environment
-- `prepareTestJob()` - Deploy test job to Jenkins
-- `verifyResult()` - Verify job was successfully copied/synced
+- `log()` - Formatted logging output with visual separators
+- `generate_ssh_key_if_needed()` - Generate SSH keys if they don't exist, start SSH agent and add keys
+- `cleanup()` - Clean up Docker containers, temporary files, and SSH keys (runs on EXIT via trap)
+- `dockerComposeUp()` - Build and start Docker containers, wait for Jenkins to be ready, configure SSH access
+- `prepareTestJob()` - Deploy a test job configuration to the source Jenkins instance
+- `verifyResult()` - Verify job was successfully copied/synced to target Jenkins (checks filesystem and API)
+- `verify_token_update()` - Verify webhook tokens were updated correctly (shows diff, file details, and token values)
 
 **Usage:**
 ```bash
@@ -479,15 +480,27 @@ source ./set-test-env.sh
 
 ## Test Scripts
 
+
 ### `run_test_copy-jenkins-jobs.sh`
 
-Integration test for `copy-jenkins-jobs-scp.sh`. Spins up Docker containers with Jenkins instances and tests the SCP-based job copy functionality.
+Integration test for `copy-jenkins-jobs-scp.sh`. Spins up Docker containers with Jenkins instances and tests the complete SCP-based job copy workflow including token updates.
+
+**Test Workflow:**
+1. Cleanup previous Docker environment
+2. Generate SSH keys (source and target)
+3. Start Docker containers and wait for Jenkins to be ready
+4. Deploy test jobs to source Jenkins (simple and multibranch)
+5. Copy jobs to target using `copy-jenkins-jobs-scp.sh`
+6. Verify jobs exist on target
+7. Update webhook tokens using `updateJenkinsConfigTokens.sh`
+8. Verify token updates (both plain-text and encrypted)
 
 **What it tests:**
 - Job copying via SCP/tar method
 - SSH key authentication
-- Job verification on target
-- Configuration reload
+- Multiple job types (simple pipeline and multibranch)
+- Job verification on target (filesystem and API)
+- Webhook token updates (plain-text and encrypted)
 
 **Run:**
 ```bash
@@ -496,13 +509,26 @@ Integration test for `copy-jenkins-jobs-scp.sh`. Spins up Docker containers with
 
 ### `run_tests_sync-jobs-rsync.sh`
 
-Integration test for `copy-jenkins-jobs-rsync.sh`. Tests the rsync-based job synchronization with SSH agent forwarding.
+Integration test for `copy-jenkins-jobs-rsync.sh`. Tests the complete rsync-based job synchronization workflow with SSH agent forwarding and token updates.
+
+**Test Workflow:**
+1. Cleanup previous Docker environment
+2. Generate SSH keys and add to SSH agent
+3. Start Docker containers and configure SSH access
+4. Deploy test jobs to source Jenkins
+5. Run dry-run sync to preview changes
+6. Run actual sync with `--delete` flag
+7. Verify jobs on target
+8. Update webhook tokens
+9. Verify token updates
 
 **What it tests:**
 - Job syncing via rsync
 - SSH agent forwarding
 - Incremental updates
 - Dry-run mode
+- Multiple job types
+- Webhook token management
 
 **Run:**
 ```bash
@@ -511,13 +537,19 @@ Integration test for `copy-jenkins-jobs-rsync.sh`. Tests the rsync-based job syn
 
 ### `run_test-updatetokens.sh`
 
-Integration test for `updateJenkinsConfigTokens.sh`. Tests token update functionality for both plain-text and encrypted webhook tokens.
+Focused integration test for `updateJenkinsConfigTokens.sh`. Tests token update functionality in isolation.
+
+**Test Workflow:**
+1. Cleanup and setup Docker environment
+2. Deploy test jobs with initial tokens
+3. Update tokens using `updateJenkinsConfigTokens.sh`
+4. Verify token changes (diff, file details, token values)
 
 **What it tests:**
-- Deployment of test jobs with sample tokens
 - Token encryption via Jenkins CLI
-- Token replacement in config.xml files
-- Verification of token updates
+- Plain-text token replacement (`<token>` for multibranch-scan-webhook-trigger)
+- Encrypted token replacement (`<secretToken>` for GitLab plugin)
+- Verification of token updates via diff and grep
 
 **Run:**
 ```bash
