@@ -10,9 +10,13 @@ if [ ! -f jenkins-cli.jar ]; then
     curl -o jenkins-cli.jar $JENKINS_HOST/jnlpJars/jenkins-cli.jar
     chmod +x jenkins-cli.jar
 fi
+echo "Encrypted token: $MY_NEW_TOKEN_ENCRYPTED"
 MY_NEW_TOKEN_ENCRYPTED=$(echo "println(hudson.util.Secret.fromString('$MY_NEW_TOKEN').getEncryptedValue())" | \
 java -jar jenkins-cli.jar -s $JENKINS_HOST -auth ${JENKINS_OWNER}:${JENKINS_TOKEN} groovy =)
-
+echo "Decrypted token: $MY_NEW_TOKEN_ENCRYPTED"
+MY_DECRYPTED_TOKEN=$(echo "println(hudson.util.Secret.fromString('$MY_NEW_TOKEN_ENCRYPTED').getPlainText())" | \
+java -jar jenkins-cli.jar -s $JENKINS_HOST -auth ${JENKINS_OWNER}:${JENKINS_TOKEN} groovy =)
+echo "Decrypted token: $MY_DECRYPTED_TOKEN (should be $MY_NEW_TOKEN)"
 
 # Update token in config file
 
