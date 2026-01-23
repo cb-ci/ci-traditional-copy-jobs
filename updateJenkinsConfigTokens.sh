@@ -22,7 +22,6 @@ set -e  # Exit on error
 
 source ./set-test-env.sh
 
-
 # --- Configure SSH/SCP commands ---
 export OPTS_COMMON="-i $SSH_KEY_FILE -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 export SSH_OPTS_SOURCE="-p $SSH_PORT_SOURCE $OPTS_COMMON"
