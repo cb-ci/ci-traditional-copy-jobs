@@ -81,7 +81,7 @@ cleanup() {
     ssh-keygen -R "[localhost]:2222" > /dev/null 2>&1 || true
 }
 
-#trap cleanup EXIT
+trap cleanup EXIT
 
 
 # Build and start Docker containers
