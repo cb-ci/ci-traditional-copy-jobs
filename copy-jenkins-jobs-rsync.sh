@@ -136,6 +136,8 @@ fi
 # -v: verbose
 # -z: compress
 # -R: use relative path names (crucial for preserving directory structure)
+#RSYNC_OPTS="-avzR -e \"ssh -p $SSH_PORT_TARGET -o StrictHostKeyChecking=no\""
+SSH_PORT_TARGET=22
 RSYNC_OPTS="-avzR -e \"ssh -p $SSH_PORT_TARGET -o StrictHostKeyChecking=no\""
 
 if [ "$DRY_RUN" = true ]; then
@@ -177,7 +179,7 @@ for job_path in "${JOB_PATHS[@]}"; do
   # Construct the rsync command string safely
   # We construct the array of arguments for rsync first
   
-  RSYNC_CMD_STR="rsync $RSYNC_OPTS ${FULL_EXCLUDES[*]} \"./$job_path\" $TARGET_USER@$TARGET_HOST:$TARGET_JENKINS_HOME/jobs/"
+  RSYNC_CMD_STR="rsync $RSYNC_OPTS ${FULL_EXCLUDES[*]} \"./$job_path\" $TARGET_USER@jenkins-target:$TARGET_JENKINS_HOME/jobs/"
   
   # Full remote command
   # 1. cd to source jobs dir
