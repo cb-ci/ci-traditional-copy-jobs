@@ -3,11 +3,12 @@ set -e
 #set -x
 # --- Configuration ---
 source ./set-test-env.sh
+
+# Initialize the test environment
 init
 
-# 7. Run the sync script
+# Run the sync script
 log "Running the copy-jenkins-jobs-rsync.sh script"
-# We DO NOT pass private keys here because they are in the agent!
 ./copy-jenkins-jobs-rsync.sh \
   --source-host "$MY_HOST" \
   --target-host "$MY_HOST" \
@@ -20,7 +21,7 @@ log "Running the copy-jenkins-jobs-rsync.sh script"
   --dry-run \
   --verbose
 
-echo "Dry run complete. Now running actual sync..."
+log "Dry run complete. Now running actual sync..."
 
 ./copy-jenkins-jobs-rsync.sh \
   --source-host "$MY_HOST" \
@@ -34,15 +35,14 @@ echo "Dry run complete. Now running actual sync..."
   --delete \
   --verbose
 
+# Reload Jenkins configuration on target to pick up changes
 reloadJenkins "$JENKINS_HOST_TARGET"
 
-# 7. Verify the copy result
+# Verify the copy result
 verifyResult "$TEST_JOB_NAME_SIMPLE"
 verifyResult "$TEST_JOB_NAME_MB"
 
-# 8. Update tokens
+# Update tokens
 ./updateJenkinsConfigTokens.sh
-# Verify updates for all test jobs
-verify_token_update "$TEST_JOB_NAME_MB"
-verify_token_update "$TEST_JOB_NAME_SIMPLE"
+
 

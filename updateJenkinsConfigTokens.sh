@@ -48,13 +48,13 @@ log "Decrypted verify: $MY_DECRYPTED_TOKEN (should match '$MY_NEW_TOKEN')"
 
 # --- Token Updates on Remote Host ---
 
-# 1. Update Plain Text Tokens
+# Update Plain Text Tokens
 # Specific to: multibranch-scan-webhook-trigger plugin and others using <token>
 log "Updating plain-text tokens (<token>) in config.xml files..."
 ssh $SSH_OPTS_TARGET "$SSH_USER@$MY_HOST" \
   "${SUDO} set -x && find  \"$JENKINS_HOME/jobs\" -iname 'config.xml' -exec sed -i.bak 's|<token>[^<]*</token>|<token>$MY_NEW_TOKEN</token>|g' {} \;"
 
-# 2. Update Encrypted Tokens
+# Update Encrypted Tokens
 # Specific to: gitlab-plugin and others using <secretToken>
 log "Updating encrypted tokens (<secretToken>) in config.xml files..."
 ssh $SSH_OPTS_TARGET "$SSH_USER@$MY_HOST" \
