@@ -31,8 +31,12 @@ export SCP_OPTS_TARGET="-P $SSH_PORT_TARGET -i $SSH_KEY_TARGET_FILE $OPTS_COMMON
 
 # Jenkins Configuration
 export JENKINS_HOME="/var/jenkins_home"
-export JENKINS_URL_SOURCE="http://$MY_HOST:8081"
-export JENKINS_URL_TARGET="http://$MY_HOST:8082"
+export JENKINS_SOURCE_CONTAINER_PORT="8081"
+export JENKINS_TARGET_CONTAINER_PORT="8082"
+export JENKINS_SOURCE_CONTAINER_NAME="jenkins-source"
+export JENKINS_TARGET_CONTAINER_NAME="jenkins-target"
+export JENKINS_URL_SOURCE="http://$MY_HOST:$JENKINS_SOURCE_CONTAINER_PORT"
+export JENKINS_URL_TARGET="http://$MY_HOST:$JENKINS_TARGET_CONTAINER_PORT"
 export JENKINS_OWNER="jenkins"
 export JENKINS_USER="admin"
 export JENKINS_TOKEN="admin_token"
@@ -79,8 +83,8 @@ cleanup() {
     # Kill any existing ssh-agent we might have started in a previous partial run (hard to track, so rely on standard exit)
     ssh-agent -k > /dev/null 2>&1 || true
     # Remove known_hosts entry to avoid issues on reruns
-    ssh-keygen -R "[localhost]:2221" > /dev/null 2>&1 || true
-    ssh-keygen -R "[localhost]:2222" > /dev/null 2>&1 || true
+    ssh-keygen -R "[$MY_HOST]:$SSH_PORT_SOURCE" > /dev/null 2>&1 || true
+    ssh-keygen -R "[$MY_HOST]:$SSH_PORT_TARGET" > /dev/null 2>&1 || true
 }
 
 # trap cleanup EXIT
@@ -100,7 +104,7 @@ init() {
 
     # Wait for Jenkins controllers to be ready
     log "Waiting for Jenkins controllers to be available..."
-    for port in 8081 8082; do
+    for port in $JENKINS_SOURCE_CONTAINER_PORT $JENKINS_TARGET_CONTAINER_PORT; do
         log "Waiting for Jenkins on port $port..."
         while ! curl -s "http://$MY_HOST:$port/login" | grep -q "Sign in to Jenkins"; do
             sleep 5
@@ -110,7 +114,7 @@ init() {
 
     # Configure SSH access and create test job
     log "Configuring SSH and creating test job on SOURCE"
-    for container in jenkins-source jenkins-target; do
+    for container in $JENKINS_SOURCE_CONTAINER_NAME $JENKINS_TARGET_CONTAINER_NAME; do
         log "Configuring SSH for $container"
         docker exec "$container" bash -c "mkdir -p /root/.ssh && chmod 700 /root/.ssh"
         docker cp "$SSH_KEY_FILE.pub" "$container:/root/.ssh/authorized_keys"
@@ -128,7 +132,7 @@ init() {
 prepareTestJob() {
     local jobName=$1
     local jobConfigFile=$2
-    local container="jenkins-source"
+    local container="$JENKINS_SOURCE_CONTAINER_NAME"
     #set -x
     log "Creating job '$jobName' on $container"
     docker exec $container mkdir -p "$JENKINS_HOME/jobs/$jobName"
@@ -138,7 +142,7 @@ prepareTestJob() {
     #docker exec jenkins-source curl -X POST http://localhost:8080/reload
 
     log "Verifying job exists on SOURCE before copy"
-    if docker exec jenkins-source ls "$JENKINS_HOME/jobs/" | grep -q "$jobName"; then
+    if docker exec $container ls "$JENKINS_HOME/jobs/" | grep -q "$jobName"; then
         log "OK: Job '$jobName' found on SOURCE."
     else
         log "ERROR: Job '$jobName' not found on SOURCE."
@@ -152,13 +156,13 @@ prepareTestJob() {
 verifyResult() {
     local jobName=$1
     log "Verifying job on TARGET after sync"
-    if docker exec jenkins-target ls "$JENKINS_HOME/jobs/" | grep -q "$jobName"; then
+    if docker exec $JENKINS_TARGET_CONTAINER_NAME ls "$JENKINS_HOME/jobs/" | grep -q "$jobName"; then
         log "SUCCESS: Job '$jobName' directory found on TARGET."
     else
         log "FAILURE: Job '$jobName' directory NOT found on TARGET."
         exit 1
     fi
-    if docker exec jenkins-target test -f "$JENKINS_HOME/jobs/$jobName/config.xml"; then
+    if docker exec $JENKINS_TARGET_CONTAINER_NAME test -f "$JENKINS_HOME/jobs/$jobName/config.xml"; then
         log "SUCCESS: config.xml found in job directory on TARGET."
     else
         log "FAILURE: config.xml NOT found in job directory on TARGET."
@@ -167,7 +171,7 @@ verifyResult() {
     log "Verifying job loaded in TARGET Jenkins UI (via API)"
     #Give Jenkins a moment to load the new job after the reload
     sleep 5
-    if curl -s "http://localhost:8082/api/json" | grep -q "\"name\":\"$jobName\"\""; then
+    if curl -s "$JENKINS_URL_TARGET/api/json" | grep -q "\"name\":\"$jobName\"\""; then
         log "SUCCESS: Job '$jobName' is visible in the Jenkins API on TARGET."
     else
         log "FAILURE: Job '$jobName' is NOT visible in the Jenkins API on TARGET."
