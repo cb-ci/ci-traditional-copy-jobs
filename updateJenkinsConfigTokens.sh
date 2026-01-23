@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e  # Exit on error
-set -x  # Print commands
+#set -x  # Print commands
 
 source ./set-test-env.sh
 
