@@ -465,7 +465,7 @@ Shared environment configuration and helper functions for all test scripts. This
 - `log()` - Formatted logging output with visual separators
 - `generate_ssh_key_if_needed()` - Generate SSH keys if they don't exist, start SSH agent and add keys
 - `cleanup()` - Clean up Docker containers, temporary files, and SSH keys (runs on EXIT via trap)
-- `dockerComposeUp()` - Build and start Docker containers, wait for Jenkins to be ready, configure SSH access
+- `init()` - Build and start Docker containers, wait for Jenkins to be ready, configure SSH access
 - `prepareTestJob()` - Deploy a test job configuration to the source Jenkins instance
 - `verifyResult()` - Verify job was successfully copied/synced to target Jenkins (checks filesystem and API)
 - `verify_token_update()` - Verify webhook tokens were updated correctly (shows diff, file details, and token values)
