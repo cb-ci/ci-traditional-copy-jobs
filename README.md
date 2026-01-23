@@ -255,7 +255,7 @@ This will make the target directory an exact mirror of the source, DELETING any 
 
 Test output log:
 ```
-➜  ci-copy-jobs git:(main) ✗ ./run_tests_sync-jobs-rsync.sh 
+➜  ci-copy-jobs git:(main) ✗ ./run_test_sync-jobs-rsync.sh 
 
 --- Cleaning up any previous Docker environment ---
 
@@ -507,7 +507,7 @@ Integration test for `copy-jenkins-jobs-scp.sh`. Spins up Docker containers with
 ./run_test_copy-jenkins-jobs.sh
 ```
 
-### `run_tests_sync-jobs-rsync.sh`
+### `run_test_sync-jobs-rsync.sh`
 
 Integration test for `copy-jenkins-jobs-rsync.sh`. Tests the complete rsync-based job synchronization workflow with SSH agent forwarding and token updates.
 
@@ -532,7 +532,7 @@ Integration test for `copy-jenkins-jobs-rsync.sh`. Tests the complete rsync-base
 
 **Run:**
 ```bash
-./run_tests_sync-jobs-rsync.sh
+./run_test_sync-jobs-rsync.sh
 ```
 
 ### `run_test-updatetokens.sh`

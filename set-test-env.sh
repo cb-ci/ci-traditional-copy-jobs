@@ -71,6 +71,10 @@ cleanup() {
     rm -Rfv $CONTROLLER_JENKINS_HOMES_PATH/$SOURCE_JENKINS_HOME/jobs/* || true
     rm -Rfv $CONTROLLER_JENKINS_HOMES_PATH/$TARGET_JENKINS_HOME/jobs/* || true
     # Kill any existing ssh-agent we might have started in a previous partial run (hard to track, so rely on standard exit)
+    ssh-agent -k > /dev/null 2>&1 || true
+    # Remove known_hosts entry to avoid issues on reruns
+    ssh-keygen -R "[localhost]:2221" > /dev/null 2>&1 || true
+    ssh-keygen -R "[localhost]:2222" > /dev/null 2>&1 || true
 }
 
 #trap cleanup EXIT
@@ -81,10 +85,11 @@ init() {
     # --- Test Workflow ---
     # Cleanup previous runs
     cleanup
-    
+
     # Generate SSH keys for source and target
     generate_ssh_key_if_needed "$SSH_KEY_SOURCE_FILE"
     generate_ssh_key_if_needed "$SSH_KEY_TARGET_FILE"
+
 
     log "Building and starting Docker containers"
     # Force build to ensure rsync is installed
@@ -110,9 +115,7 @@ init() {
         docker exec "$container" bash -c "chmod 600 /root/.ssh/authorized_keys"
     done
 
-    # Remove known_hosts entry to avoid issues on reruns
-    ssh-keygen -R "[localhost]:2221" > /dev/null 2>&1 || true
-    ssh-keygen -R "[localhost]:2222" > /dev/null 2>&1 || true
+
 
     # Create test jobs
     prepareTestJob "$TEST_JOB_NAME_SIMPLE" "$TEST_JOB_SIMPLE_CONFIG_FILE"
