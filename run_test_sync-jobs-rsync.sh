@@ -36,7 +36,7 @@ log "Dry run complete. Now running actual sync..."
   --verbose
 
 # Reload Jenkins configuration on target to pick up changes
-reloadJenkins "$JENKINS_HOST_TARGET"
+#reloadJenkins "$JENKINS_HOST_TARGET"
 
 # Verify the copy result
 verifyResult "$TEST_JOB_NAME_SIMPLE"

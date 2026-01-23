@@ -199,9 +199,9 @@ for job_path in "${JOB_PATHS[@]}"; do
 
   log "Connecting to SOURCE to execute transfer..."
   
-  set -x
+
   ssh -o StrictHostKeyChecking=no -A -p "$SSH_PORT_SOURCE" "$SOURCE_USER@$SOURCE_HOST" "$REMOTE_SCRIPT"
-  set +x
+
 
   if [ $? -eq 0 ]; then
      log "Successfully synced '$job_path'."
