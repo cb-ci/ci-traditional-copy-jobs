@@ -21,9 +21,11 @@ export SSH_KEY_FILE="./jenkins_test_key"
 export SSH_KEY_SOURCE_FILE=${SSH_KEY_FILE}  #"./jenkins_test_key_source"
 export SSH_KEY_TARGET_FILE=${SSH_KEY_FILE}  #"./jenkins_test_key_target"
 # Note: ssh uses -p for port, scp uses -P for port
-export OPTS_COMMON="-i $SSH_KEY_FILE -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
-export SSH_OPTS="-p $SSH_PORT $OPTS_COMMON"
-export SCP_OPTS="-P $SSH_PORT $OPTS_COMMON"
+export OPTS_COMMON=" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+export SSH_OPTS_SOURCE="-p $SSH_PORT_SOURCE -i $SSH_KEY_SOURCE_FILE $OPTS_COMMON"
+export SSH_OPTS_TARGET="-p $SSH_PORT_TARGET -i $SSH_KEY_TARGET_FILE $OPTS_COMMON"
+export SCP_OPTS_SOURCE="-P $SSH_PORT_SOURCE -i $SSH_KEY_SOURCE_FILE $OPTS_COMMON"
+export SCP_OPTS_TARGET="-P $SSH_PORT_TARGET -i $SSH_KEY_TARGET_FILE $OPTS_COMMON"
 
 
 
@@ -81,7 +83,7 @@ cleanup() {
     ssh-keygen -R "[localhost]:2222" > /dev/null 2>&1 || true
 }
 
-trap cleanup EXIT
+# trap cleanup EXIT
 
 
 # Build and start Docker containers

@@ -40,12 +40,12 @@ log() {
 
 verbose_log() {
   if [ "$VERBOSE" = true ]; then
-    echo "   [VERBOSE] $1"
+    log "   [VERBOSE] $1"
   fi
 }
 
 die() {
-  echo "[ERROR] $1" >&2
+  log "[ERROR] $1" >&2
   exit 1
 }
 
@@ -195,13 +195,11 @@ for job_path in "${JOB_PATHS[@]}"; do
     $RSYNC_CMD_STR
   "
 
-  verbose_log "Connecting to SOURCE to execute transfer..."
+  log "Connecting to SOURCE to execute transfer..."
   
-  # Execute via SSH with Agent Forwarding (-A)
-  # using -t to allocate a tty if needed, but usually better without for automation unless interactive.
-  # simple command execution usually doesn't need -t.
-  
+  set -x
   ssh -o StrictHostKeyChecking=no -A -p "$SSH_PORT_SOURCE" "$SOURCE_USER@$SOURCE_HOST" "$REMOTE_SCRIPT"
+  set +x
 
   if [ $? -eq 0 ]; then
      log "Successfully synced '$job_path'."
