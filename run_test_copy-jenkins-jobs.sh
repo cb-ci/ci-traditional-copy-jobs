@@ -34,9 +34,16 @@ log "Running the copy-jenkins-jobs-scp.sh script"
   --verbose \
   --force
 
-# 7. Verify the result
+# 7. Verify the copy result
 verifyResult "$TEST_JOB_NAME_SIMPLE"
 verifyResult "$TEST_JOB_NAME_MB"
+
+# 8. Update tokens
+./updateJenkinsConfigTokens.sh
+# Verify updates for all test jobs
+verify_token_update "$TEST_JOB_NAME_MB"
+verify_token_update "$TEST_JOB_NAME_SIMPLE"
+
 
 
 

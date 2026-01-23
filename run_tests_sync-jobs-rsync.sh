@@ -42,4 +42,13 @@ echo "Dry run complete. Now running actual sync..."
   --verbose
 
 
+# 7. Verify the copy result
+verifyResult "$TEST_JOB_NAME_SIMPLE"
+verifyResult "$TEST_JOB_NAME_MB"
+
+# 8. Update tokens
+./updateJenkinsConfigTokens.sh
+# Verify updates for all test jobs
+verify_token_update "$TEST_JOB_NAME_MB"
+verify_token_update "$TEST_JOB_NAME_SIMPLE"
 

@@ -131,6 +131,26 @@ prepareTestJob() {
     fi
 }
 
+# Verify update on tokens
+verify_token_update() {
+  local job_path="$1"
+  
+  echo "########################"
+  echo "Verifying job: $job_path"
+  
+  # Show the diff between current and backup
+  ssh $SSH_OPTS "$SSH_USER@$SSH_HOST" \
+    "${SUDO} set -x && diff \"$JENKINS_HOME/jobs/$job_path/config.xml\" \"$JENKINS_HOME/jobs/$job_path/config.xml.bak\"" || true
+  
+  # Show file details
+  ssh $SSH_OPTS "$SSH_USER@$SSH_HOST" \
+    "${SUDO} set -x && ls -l \"$JENKINS_HOME/jobs/$job_path/config.xml\""
+  
+  # Show token values
+  ssh $SSH_OPTS "$SSH_USER@$SSH_HOST" \
+    "${SUDO} set -x && cat \"$JENKINS_HOME/jobs/$job_path/config.xml\" | grep -i token"
+}
+
 # Verify the result
 verifyResult() {
     local jobName=$1
