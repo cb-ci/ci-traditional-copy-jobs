@@ -7,7 +7,6 @@ This repository contains scripts to copy Jenkins jobs from a source controller t
 1.  **`copy-jenkins-jobs-scp.sh`**: Uses `scp` and `tar` to archive and transfer jobs. Good for simple transfers or when `rsync` is not available.
 2.  **`copy-jenkins-jobs-rsync.sh`**: Uses `rsync` over SSH. Efficient for syncing large jobs or incremental updates. Supports exclusions for build artifacts.
 3.  **`updateJenkinsConfigTokens.sh`**: Updates webhook tokens in Jenkins job configurations (both plain-text and encrypted tokens).
-4.  **`set-test-env.sh`**: Shared test environment configuration and helper functions for all test scripts.
 
 ---
 
