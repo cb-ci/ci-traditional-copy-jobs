@@ -18,7 +18,7 @@
 #
 
 set -e  # Exit on error
-#set -x  # Print commands
+
 
 source ./set-test-env.sh
 
@@ -42,7 +42,7 @@ MY_DECRYPTED_TOKEN=$(echo "println(hudson.util.Secret.fromString('$MY_NEW_TOKEN_
 java -jar jenkins-cli.jar -s $JENKINS_URL_TARGET -auth ${JENKINS_OWNER}:${JENKINS_TOKEN} groovy =)
 log "Decrypted verify: $MY_DECRYPTED_TOKEN (should match '$MY_NEW_TOKEN')"
 
-# --- Token Updates on Remote Host ---
+# Token Updates on Remote Host ---
 
 # Update Plain Text Tokens
 # Specific to: multibranch-scan-webhook-trigger plugin and others using <token>
