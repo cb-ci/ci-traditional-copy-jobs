@@ -113,15 +113,29 @@ init() {
     cd "$TEST_WORKDIR"
     docker-compose up -d --build
     
-    # Wait for Jenkins controllers to be ready
+    # Wait for Jenkins controllers to initialize
     log "Waiting for Jenkins controllers to initialize..."
     for url in "$SOURCE_JENKINS_URL" "$TARGET_JENKINS_URL"; do
-        curl  "$url/health" |tee /dev/null | jq .
-        
-        while ! curl -s "$url/health" | jq -e .status > /dev/null 2>&1; do
+        log "Checking readiness for $url"
+        local retries=0
+        local max_retries=60 # 2 minutes total
+        while true; do
+            # Check for a successful response (200 OK) or even a 403 (meaning it's up but secure)
+            # Standard Jenkins usually returns 200 for the login page
+            local status_code=$(curl -s -o /dev/null -w "%{http_code}" "$url/login" || echo "000")
+            
+            if [[ "$status_code" -eq 200 ]]; then
+                log "Jenkins is ready at $url (HTTP $status_code)"
+                break
+            fi
+            
+            retries=$((retries + 1))
+            if [ $retries -ge $max_retries ]; then
+                log "ERROR: Jenkins at $url failed to respond after $max_retries attempts."
+                exit 1
+            fi
             sleep 2
         done
-        log "Jenkins is ready at $url"
     done
 
     # Configure SSH access inside containers

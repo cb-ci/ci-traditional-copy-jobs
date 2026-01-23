@@ -200,7 +200,7 @@ for job_path in "${JOB_PATHS[@]}"; do
   log "Connecting to SOURCE to execute transfer..."
   
 
-  ssh -o StrictHostKeyChecking=no -A -p "$SSH_PORT_SOURCE" "$SOURCE_USER@$SOURCE_HOST" "$REMOTE_SCRIPT"
+  ssh -o StrictHostKeyChecking=no -i /Users/acaternberg/projects/customer-Randstad/ci-copy-jobs/tests/jenkins_test_key -A -p "$SSH_PORT_SOURCE" "$SOURCE_USER@$SOURCE_HOST" "$REMOTE_SCRIPT"
 
 
   if [ $? -eq 0 ]; then
