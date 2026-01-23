@@ -148,7 +148,7 @@ verifyResult() {
         exit 1
     fi
     log "Verifying job loaded in TARGET Jenkins UI (via API)"
-    Give Jenkins a moment to load the new job after the reload
+    #Give Jenkins a moment to load the new job after the reload
     sleep 5
     if curl -s "http://localhost:8082/api/json" | grep -q "\"name\":\"$jobName\"\""; then
         echo "SUCCESS: Job '$jobName' is visible in the Jenkins API on TARGET."
