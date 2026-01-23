@@ -81,5 +81,5 @@ verify_token_update() {
   ssh $SSH_OPTS_TARGET "$SSH_USER@$MY_HOST" \
     "${SUDO} set -x && cat \"$JENKINS_HOME/jobs/$job_path/config.xml\" | grep -i token"
 }
-verify_token_update "$TEST_JOB_MB"
-verify_token_update "$TEST_JOB_SIMPLE"
+verify_token_update "$TEST_JOB_NAME_MB"
+verify_token_update "$TEST_JOB_NAME_SIMPLE"
