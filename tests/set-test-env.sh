@@ -18,7 +18,7 @@ export CONFIG_FILE_MB="$TEST_DATA_DIR/sample-mb-mulitscan-trigger-config.xml"
 export CONFIG_FILE_SIMPLE="$TEST_DATA_DIR/sample-simple-gitlab-config.xml"
 
 # Resource files
-export TEST_SSH_KEY_FILE="$TEST_WORKDIR/jenkins_test_key"
+export TEST_SSH_KEY_FILE="$TEST_WORKDIR/id_ed25519"
 export TEST_SSH_KEY_PUB="$TEST_SSH_KEY_FILE.pub"
 export JENKINS_CLI_JAR="$TEST_WORKDIR/jenkins-cli.jar"
 
@@ -144,6 +144,8 @@ init() {
         docker exec "$container" bash -c "mkdir -p /root/.ssh && chmod 700 /root/.ssh"
         docker cp "$TEST_SSH_KEY_PUB" "$container:/root/.ssh/authorized_keys"
         docker exec "$container" bash -c "chmod 600 /root/.ssh/authorized_keys"
+        docker cp "$TEST_SSH_KEY_FILE" "$container:/root/.ssh/id_ed25519"
+        docker exec "$container" bash -c "chmod 600 /root/.ssh/id_ed25519"
     done
 
     # Prepare test jobs on source

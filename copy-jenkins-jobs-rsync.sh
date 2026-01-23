@@ -62,6 +62,7 @@ Required:
   --target-host <host>          Target Jenkins controller hostname or IP.
   --source-user <user>          SSH user for the source host.
   --target-user <user>          SSH user for the target host.
+  --ssh-key-file <path>         Path to the SSH private key for the source host.
   --job-path <path>             Subpath of the job to sync (e.g., "teamA/job1").
                                 Can be specified multiple times.
 
@@ -101,6 +102,7 @@ while [ $# -gt 0 ]; do
     --target-host) TARGET_HOST="$2"; shift 2 ;;
     --source-user) SOURCE_USER="$2"; shift 2 ;;
     --target-user) TARGET_USER="$2"; shift 2 ;;
+    --ssh-key-file) SSH_KEY_FILE="$2"; shift 2 ;;
     --job-path) JOB_PATHS+=("$2"); shift 2 ;;
     --source-jenkins-home) SOURCE_JENKINS_HOME="$2"; shift 2 ;;
     --target-jenkins-home) TARGET_JENKINS_HOME="$2"; shift 2 ;;
@@ -116,8 +118,9 @@ while [ $# -gt 0 ]; do
 done
 
 # --- Validation ---
-if [ -z "$SOURCE_HOST" ] || [ -z "$TARGET_HOST" ] || [ -z "$SOURCE_USER" ] || [ -z "$TARGET_USER" ]; then
-  die "Source/Target host and user are required. See --help."
+if [ -z "$SOURCE_HOST" ] || [ -z "$TARGET_HOST" ] || [ -z "$SOURCE_USER" ] || [ -z "$TARGET_USER" || [ -z "$SSH_KEY_FILE" ]; then
+  log "$"
+  die "Source/Target host,user and ssh key are required. See --help."
 fi
 if [ ${#JOB_PATHS[@]} -eq 0 ]; then
   die "At least one --job-path must be specified."
@@ -138,7 +141,7 @@ fi
 # -R: use relative path names (crucial for preserving directory structure)
 #RSYNC_OPTS="-avzR -e \"ssh -p $SSH_PORT_TARGET -o StrictHostKeyChecking=no\""
 SSH_PORT_TARGET=22
-RSYNC_OPTS="-avzR -e \"ssh -p $SSH_PORT_TARGET -o StrictHostKeyChecking=no\""
+RSYNC_OPTS="-avzR -e \"ssh -p $SSH_PORT_TARGET -i $SSH_KEY_FILE -o StrictHostKeyChecking=no\""
 
 if [ "$DRY_RUN" = true ]; then
   RSYNC_OPTS="$RSYNC_OPTS --dry-run"
@@ -199,9 +202,9 @@ for job_path in "${JOB_PATHS[@]}"; do
 
   log "Connecting to SOURCE to execute transfer..."
   
-
-  ssh -o StrictHostKeyChecking=no -i /Users/acaternberg/projects/customer-Randstad/ci-copy-jobs/tests/jenkins_test_key -A -p "$SSH_PORT_SOURCE" "$SOURCE_USER@$SOURCE_HOST" "$REMOTE_SCRIPT"
-
+  set -x
+  ssh -o StrictHostKeyChecking=no  -A -p "$SSH_PORT_SOURCE" -i "$SSH_KEY_FILE" "$SOURCE_USER@$SOURCE_HOST" "$REMOTE_SCRIPT"
+  set +x
 
   if [ $? -eq 0 ]; then
      log "Successfully synced '$job_path'."

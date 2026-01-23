@@ -213,6 +213,7 @@ This script uses `rsync` over SSH to synchronize jobs. It is more efficient for 
   `--target-host <host>`          Target Jenkins controller hostname or IP.
   `--source-user <user>`          SSH user for the source host.
   `--target-user <user>`          SSH user for the target host.
+  `--ssh-key-file <path>`              Path to the SSH private key for the source host.
   `--job-path <path>`             Subpath of the job to sync.
  ```
 
@@ -230,12 +231,13 @@ This script uses `rsync` over SSH to synchronize jobs. It is more efficient for 
 
 #### 1. Basic Job Sync
 
-Synchronize a job while excluding the workspace and build history (default behavior includes excluding `workspace/`, `lastStable`, etc., but you can add more).
+Synchronize a job while excluding the workspace and build history.
 
 ```sh
 ./copy-jenkins-jobs-rsync.sh \
   --source-host source.jenkins.example.com --source-user admin \
   --target-host target.jenkins.example.com --target-user admin \
+  --ssh-key-file ~/.ssh/id_rsa_source \
   --job-path "MyFolder/MyJob" \
   --exclude "builds/" \
   --dry-run
@@ -243,12 +245,14 @@ Synchronize a job while excluding the workspace and build history (default behav
 
 #### 2. Sync with Delete
 
-This will make the target directory an exact mirror of the source, DELETING any files on the target that are not present on the source (use with caution).
+This will make the target directory an exact mirror of the source, DELETING any files on the target that are not present on the source.
 
 ```sh
 ./copy-jenkins-jobs-rsync.sh \
   --source-host source.jenkins.example.com --source-user admin \
   --target-host target.jenkins.example.com --target-user admin \
+  --ssh-key-file ~/.ssh/id_rsa_source \
   --job-path "MyProject" \
   --delete
 ```
+
