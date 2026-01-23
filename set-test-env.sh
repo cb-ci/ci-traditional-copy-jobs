@@ -10,11 +10,13 @@ export MY_NEW_TOKEN=${1:-"mytoken"}
 # Sudo or not
 #SUDO="sudo -i"
 export SUDO=""
-
+export MY_HOST="localhost"
 # SSH Configuration
 export SSH_USER="root"
-export SSH_HOST="localhost"
-export SSH_PORT="2222"
+# Define test-specific overrides/variables that match docker-compose setup
+
+export SSH_PORT_SOURCE="2221"
+export SSH_PORT_TARGET="2222"
 export SSH_KEY_FILE="./jenkins_test_key"
 export SSH_KEY_SOURCE_FILE=${SSH_KEY_FILE}  #"./jenkins_test_key_source"
 export SSH_KEY_TARGET_FILE=${SSH_KEY_FILE}  #"./jenkins_test_key_target"
@@ -23,9 +25,12 @@ export OPTS_COMMON="-i $SSH_KEY_FILE -o StrictHostKeyChecking=no -o UserKnownHos
 export SSH_OPTS="-p $SSH_PORT $OPTS_COMMON"
 export SCP_OPTS="-P $SSH_PORT $OPTS_COMMON"
 
+
+
 # Jenkins Configuration
 export JENKINS_HOME="/var/jenkins_home"
-export JENKINS_HOST="http://$SSH_HOST:8082"
+export JENKINS_URL_SOURCE="http://$MY_HOST:8081"
+export JENKINS_URL_TARGET="http://$MY_HOST:8082"
 export JENKINS_OWNER="jenkins"
 export JENKINS_USER="admin"
 export JENKINS_TOKEN="admin_token"
@@ -95,7 +100,7 @@ init() {
     log "Waiting for Jenkins controllers to be available..."
     for port in 8081 8082; do
         log "Waiting for Jenkins on port $port..."
-        while ! curl -s "http://localhost:$port/login" | grep -q "Sign in to Jenkins"; do
+        while ! curl -s "http://$MY_HOST:$port/login" | grep -q "Sign in to Jenkins"; do
             sleep 5
         done
         log "Jenkins on port $port is ready."
@@ -186,4 +191,45 @@ verifyResult() {
     log "TEST SUCCEEDED!"
 }
 
+reloadJenkins() {
+  # Reload Jenkins Configurations
+  # Arguments:
+  #   $1 - jenkins_url (optional, defaults to JENKINS_HOST)
+  local jenkins_url="${1:-$JENKINS_HOST}"
 
+  log "Attempting to reload Jenkins configuration from disk on target..."  
+  CURL_OPTS=("-s" "-X" "POST")
+  
+  if [ -n "$JENKINS_USER" ] && [ -n "$JENKINS_TOKEN" ]; then
+      # Fetch CSRF crumb if protection is enabled
+      CRUMB_URL="${jenkins_url}/crumbIssuer/api/json"
+      
+      # Use sed to parse JSON to avoid dependency on jq
+      CRUMB_DATA=$(curl "${CURL_OPTS[@]}" --user "$JENKINS_USER:$JENKINS_TOKEN" "$CRUMB_URL")
+      if [[ "$CRUMB_DATA" == *"\"crumbRequestField\":"* ]]; then
+          CRUMB_HEADER=$(echo "$CRUMB_DATA" | sed -n 's/.*\"crumbRequestField\":\"\([^\"]*\)\".*/\1/p')
+          CRUMB_VALUE=$(echo "$CRUMB_DATA" | sed -n 's/.*\"crumb\":\"\([^\"]*\)\".*/\1/p')
+          
+          if [ -n "$CRUMB_HEADER" ] && [ -n "$CRUMB_VALUE" ]; then
+              CURL_OPTS+=("-H" "$CRUMB_HEADER:$CRUMB_VALUE")
+          else
+              log "Warning: Could not parse CSRF crumb from response. Reload might fail."
+          fi
+      fi
+      CURL_OPTS+=("--user" "$JENKINS_USER:$JENKINS_TOKEN")
+  fi
+  
+  RELOAD_URL="${jenkins_url}/reload"
+  
+  HTTP_STATUS=$(curl "${CURL_OPTS[@]}" --write-out "%{http_code}" --output /dev/null "$RELOAD_URL")
+  
+  if [[ "$HTTP_STATUS" -ge 200 && "$HTTP_STATUS" -lt 300 ]]; then
+    log "Successfully triggered configuration reload on target Jenkins (HTTP $HTTP_STATUS)."
+  else
+    log "Warning: Failed to trigger configuration reload. Jenkins returned HTTP status $HTTP_STATUS."
+    log "You may need to manually reload configuration via the Jenkins UI ('Manage Jenkins' -> 'Reload Configuration from Disk')."
+    log "1. Go to your Jenkins UI -> Manage Jenkins."
+    log "2. Click 'Reload Configuration from Disk'."
+  fi
+}
+    

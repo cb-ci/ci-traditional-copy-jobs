@@ -4,38 +4,47 @@ set -e
 # --- Configuration ---
 source ./set-test-env.sh
 
-# Start docker containers
+
+
+# Start docker containers and prepare environment (provided by set-test-env.sh)
 init
 
+# --- Execution ---
 
-# 6. Run the copy script
+# 1. Run the copy script (SCP version)
 log "Running the copy-jenkins-jobs-scp.sh script"
 ./copy-jenkins-jobs-scp.sh \
-  --source-host "localhost" \
-  --target-host "localhost" \
-  --source-user "root" \
-  --target-user "root" \
-  --ssh-port-source "2221" \
-  --ssh-port-target "2222" \
+  --source-host "$MY_HOST" \
+  --target-host "$MY_HOST" \
+  --source-user "$SSH_USER" \
+  --target-user "$SSH_USER" \
+  --ssh-port-source "$SSH_PORT_SOURCE" \
+  --ssh-port-target "$SSH_PORT_TARGET" \
   --ssh-key-source "$SSH_KEY_FILE" \
   --ssh-key-target "$SSH_KEY_FILE" \
   --job-path "$TEST_JOB_NAME_SIMPLE" \
   --job-path "$TEST_JOB_NAME_MB" \
   --jenkins-user "$JENKINS_USER" \
   --jenkins-token "$JENKINS_TOKEN" \
-  --jenkins-url-target "http://localhost:8082" \
+  --jenkins-url-target "$JENKINS_URL_TARGET" \
   --verbose \
   --force
 
-# 7. Verify the copy result
+# Reload Jenkins configuration on target to pick up changes
+reloadJenkins "$JENKINS_URL_TARGET"
+
+# 2. Verify the copy result
 verifyResult "$TEST_JOB_NAME_SIMPLE"
 verifyResult "$TEST_JOB_NAME_MB"
 
-# 8. Update tokens
+# 3. Update webhook tokens
+# This script uses the environment variables set in set-test-env.sh
 ./updateJenkinsConfigTokens.sh
-# Verify updates for all test jobs
+
+# Verify token updates for all test jobs
 verify_token_update "$TEST_JOB_NAME_MB"
 verify_token_update "$TEST_JOB_NAME_SIMPLE"
+
 
 
 

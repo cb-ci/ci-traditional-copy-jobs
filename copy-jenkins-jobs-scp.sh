@@ -1,19 +1,21 @@
 #!/bin/bash
 #
-# Copies Jenkins jobs from a SOURCE controller to a TARGET controller.
+# copy-jenkins-jobs-scp.sh
+#
+# Description:
+#   Copies Jenkins jobs from a SOURCE controller to a TARGET controller using scp and tar.
+#   It creates a tar archive of the job on the source, transfers it to the target (tunneling through local machine),
+#   and extracts it on the target.
 #
 # Assumptions:
 # - Controllers are Linux-based.
-# - ssh, scp, tar, gzip, curl, and standard shell utilities are available on the
-#   machine running this script and on the target/source hosts.
-# - SSH access (ideally key-based) is configured between the machine running
-#   this script and both SOURCE and TARGET hosts.
-# - The SSH users on SOURCE and TARGET have sufficient permissions to read the
-#   Jenkins job directories and write/create directories in the target
-#   Jenkins home.
+# - ssh, scp, tar, gzip, curl, and standard shell utilities are available.
+# - SSH access is configured.
+#
 
 set -Eeo pipefail
 #set -x
+
 # --- Default Configuration ---
 SOURCE_JENKINS_HOME="/var/jenkins_home"
 TARGET_JENKINS_HOME="/var/jenkins_home"
@@ -233,11 +235,8 @@ for job_path in "${JOB_PATHS[@]}"; do
   TEMP_FILES_TARGET+=("$tmp_archive_target.tar.gz")
 
   log "Transferring archive to target..."
+  # Use scp -3 to transfer between two remotes via local host
   # shellcheck disable=SC2086
-
- # scp $SCP_OPTS_SOURCE $SCP_OPTS_TARGET "$SOURCE_USER@$SOURCE_HOST:'$tmp_archive_source.tar.gz'" \
- #   "$TARGET_USER@$TARGET_HOST:'$tmp_archive_target.tar.gz'"
-  #-i ./jenkins_test_key
   scp -3 -i $SSH_KEY_SOURCE \
       scp://$SOURCE_USER@$SOURCE_HOST:$SSH_PORT_SOURCE/$TEMP_FILES_SOURCE \
       scp://$TARGET_USER@$TARGET_HOST:$SSH_PORT_TARGET/$TEMP_FILES_TARGET
@@ -259,51 +258,3 @@ log "--------------------------------------------------"
 log "Copy process finished."
 log "Summary: $COPIED_COUNT job(s) copied, $SKIPPED_COUNT job(s) skipped."
 log "--------------------------------------------------"
-
-# --- 7. Reload Jenkins Configuration ---
-if [ $COPIED_COUNT -gt 0 ] && [ "$DRY_RUN" = false ] && [ -n "$JENKINS_URL_TARGET" ]; then
-  log "Attempting to reload Jenkins configuration from disk on target..."
-  
-  CURL_OPTS=("-s" "-X" "POST")
-  if [ -n "$JENKINS_USER" ] && [ -n "$JENKINS_TOKEN" ]; then
-      verbose_log "Using authentication for Jenkins reload."
-      CURL_OPTS+=("--user" "$JENKINS_USER:$JENKINS_TOKEN")
-      
-      # Fetch CSRF crumb if protection is enabled
-      CRUMB_URL="${JENKINS_URL_TARGET}/crumbIssuer/api/json"
-      verbose_log "Fetching CSRF crumb from $CRUMB_URL"
-      
-      # Use sed to parse JSON to avoid dependency on jq
-      CRUMB_DATA=$(curl "${CURL_OPTS[@]}" "$CRUMB_URL")
-      if [[ "$CRUMB_DATA" == *"\"crumbRequestField\":"* ]]; then
-          CRUMB_HEADER=$(echo "$CRUMB_DATA" | sed -n 's/.*\"crumbRequestField\":\"\([^\"]*\)\".*/\1/p')
-          CRUMB_VALUE=$(echo "$CRUMB_DATA" | sed -n 's/.*\"crumb\":\"\([^\"]*\)\".*/\1/p')
-          
-          if [ -n "$CRUMB_HEADER" ] && [ -n "$CRUMB_VALUE" ]; then
-              verbose_log "CSRF crumb found. Using header: $CRUMB_HEADER"
-              CURL_OPTS+=("-H" "$CRUMB_HEADER:$CRUMB_VALUE")
-          else
-              log "Warning: Could not parse CSRF crumb from response. Reload might fail."
-          fi
-      else
-        verbose_log "CSRF protection does not seem to be enabled. Proceeding without crumb."
-      fi
-  fi
-  
-  RELOAD_URL="${JENKINS_URL_TARGET}/reload"
-  verbose_log "Posting to $RELOAD_URL"
-  
-  HTTP_STATUS=$(curl "${CURL_OPTS[@]}" --write-out "%{http_code}" --output /dev/null "$RELOAD_URL")
-  
-  if [[ "$HTTP_STATUS" -ge 200 && "$HTTP_STATUS" -lt 300 ]]; then
-    log "Successfully triggered configuration reload on target Jenkins (HTTP $HTTP_STATUS)."
-  else
-    log "Warning: Failed to trigger configuration reload. Jenkins returned HTTP status $HTTP_STATUS."
-    log "You may need to manually reload configuration via the Jenkins UI ('Manage Jenkins' -> 'Reload Configuration from Disk')."
-  fi
-
-elif [ $COPIED_COUNT -gt 0 ] && [ "$DRY_RUN" = false ]; then
-  log "No --jenkins-url-target provided. Please manually reload configuration:"
-  log "1. Go to your Jenkins UI -> Manage Jenkins."
-  log "2. Click 'Reload Configuration from Disk'."
-fi

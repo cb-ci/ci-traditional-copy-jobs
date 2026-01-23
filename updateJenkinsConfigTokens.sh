@@ -1,37 +1,57 @@
 #!/bin/bash
+#
+# updateJenkinsConfigTokens.sh
+#
+# Description:
+#   Updates webhook tokens in Jenkins job configuration files (config.xml) on a remote Jenkins instance.
+#   - Handles plain-text tokens (e.g., for multibranch-scan-webhook-trigger).
+#   - Handles encrypted tokens (e.g., for GitLab plugin) by encrypting the new token using Jenkins CLI.
+#
+# Usage:
+#   ./updateJenkinsConfigTokens.sh [NEW_TOKEN]
+#
+# Environment Variables (set via set-test-env.sh):
+#   - JENKINS_HOST: URL of the Jenkins instance
+#   - JENKINS_OWNER: Jenkins user for CLI authentication
+#   - JENKINS_TOKEN: Jenkins API token for CLI authentication
+#   - SSH_OPTS, SSH_USER, SSH_HOST: SSH connection details
+#
+
 set -e  # Exit on error
 #set -x  # Print commands
 
 source ./set-test-env.sh
 
-# Get encrypted token, used for GitLab Plugin
+# --- Token Encryption ---
 
 if [ ! -f jenkins-cli.jar ]; then
-    curl -o jenkins-cli.jar $JENKINS_HOST/jnlpJars/jenkins-cli.jar
+    log "Downloading jenkins-cli.jar..."
+    curl -o jenkins-cli.jar -s $JENKINS_URL_TARGET/jnlpJars/jenkins-cli.jar
     chmod +x jenkins-cli.jar
 fi
-echo "Encrypted token: $MY_NEW_TOKEN_ENCRYPTED"
+
+log "Encrypting new token using Jenkins CLI..."
 MY_NEW_TOKEN_ENCRYPTED=$(echo "println(hudson.util.Secret.fromString('$MY_NEW_TOKEN').getEncryptedValue())" | \
-java -jar jenkins-cli.jar -s $JENKINS_HOST -auth ${JENKINS_OWNER}:${JENKINS_TOKEN} groovy =)
-echo "Decrypted token: $MY_NEW_TOKEN_ENCRYPTED"
+java -jar jenkins-cli.jar -s $JENKINS_URL_TARGET -auth ${JENKINS_OWNER}:${JENKINS_TOKEN} groovy =)
+echo "Encrypted token: $MY_NEW_TOKEN_ENCRYPTED"
 
-MY_DECRYPTED_TOKEN=$(echo "println(hudson.util.Secret.fromString('$MY_NEW_TOKEN_ENCRYPTED').getPlainText())" | \
-java -jar jenkins-cli.jar -s $JENKINS_HOST -auth ${JENKINS_OWNER}:${JENKINS_TOKEN} groovy =)
-echo "Decrypted token: $MY_DECRYPTED_TOKEN (should be $MY_NEW_TOKEN)"
+# Verify encryption (optional, for debugging)
+# MY_DECRYPTED_TOKEN=$(echo "println(hudson.util.Secret.fromString('$MY_NEW_TOKEN_ENCRYPTED').getPlainText())" | \
+# java -jar jenkins-cli.jar -s $JENKINS_HOST -auth ${JENKINS_OWNER}:${JENKINS_TOKEN} groovy =)
+# echo "Decrypted verify: $MY_DECRYPTED_TOKEN (should match '$MY_NEW_TOKEN')"
 
-# Update token in config file
+# --- Token Updates on Remote Host ---
 
-# This replacement is specifc to multibranch-scan-webhook-trigger plugin
-# The multibranch-scan-webhook-trigger plugin uses a token in PLAIN_TEXT to authenticate webhooks
-# It will update the token in the config.xml file
-# Other triggers like gitlab or github webhook trigger might have different tokens patterns or configuration file paths
+# 1. Update Plain Text Tokens
+# Specific to: multibranch-scan-webhook-trigger plugin and others using <token>
+log "Updating plain-text tokens (<token>) in config.xml files..."
 ssh $SSH_OPTS "$SSH_USER@$SSH_HOST" \
   "${SUDO} set -x && find  \"$JENKINS_HOME/jobs\" -iname 'config.xml' -exec sed -i.bak 's|<token>[^<]*</token>|<token>$MY_NEW_TOKEN</token>|g' {} \;"
 
-# This replacement is specifc to gitlab plugin
-# The gitlab plugin uses a ENCRYPTED token to authenticate webhooks
-# It will update the token in the config.xml file
-# Other triggers like gitlab or github webhook trigger might have different tokens patterns or configuration file paths
-
+# 2. Update Encrypted Tokens
+# Specific to: gitlab-plugin and others using <secretToken>
+log "Updating encrypted tokens (<secretToken>) in config.xml files..."
 ssh $SSH_OPTS "$SSH_USER@$SSH_HOST" \
   "${SUDO} set -x && find  \"$JENKINS_HOME/jobs\" -iname 'config.xml' -exec sed -i.bak 's|<secretToken>[^<]*</secretToken>|<secretToken>$MY_NEW_TOKEN_ENCRYPTED</secretToken>|g' {} \;"
+
+log "Token update complete."

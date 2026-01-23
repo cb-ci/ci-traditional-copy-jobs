@@ -1,6 +1,9 @@
 #!/bin/bash
 #
-# Syncs Jenkins jobs from a SOURCE controller to a TARGET controller using rsync.
+# copy-jenkins-jobs-rsync.sh
+#
+# Description:
+#   Syncs Jenkins jobs from a SOURCE controller to a TARGET controller using rsync.
 #
 # Approach:
 # - This script runs LOCALLY (e.g., on an admin's laptop).
