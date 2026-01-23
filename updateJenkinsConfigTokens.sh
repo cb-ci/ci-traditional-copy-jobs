@@ -33,25 +33,25 @@ fi
 log "Encrypting new token using Jenkins CLI..."
 MY_NEW_TOKEN_ENCRYPTED=$(echo "println(hudson.util.Secret.fromString('$MY_NEW_TOKEN').getEncryptedValue())" | \
 java -jar jenkins-cli.jar -s $JENKINS_URL_TARGET -auth ${JENKINS_OWNER}:${JENKINS_TOKEN} groovy =)
-echo "Encrypted token: $MY_NEW_TOKEN_ENCRYPTED"
+log "Encrypted token: $MY_NEW_TOKEN_ENCRYPTED"
 
 # Verify encryption (optional, for debugging)
-# MY_DECRYPTED_TOKEN=$(echo "println(hudson.util.Secret.fromString('$MY_NEW_TOKEN_ENCRYPTED').getPlainText())" | \
-# java -jar jenkins-cli.jar -s $JENKINS_HOST -auth ${JENKINS_OWNER}:${JENKINS_TOKEN} groovy =)
-# echo "Decrypted verify: $MY_DECRYPTED_TOKEN (should match '$MY_NEW_TOKEN')"
+MY_DECRYPTED_TOKEN=$(echo "println(hudson.util.Secret.fromString('$MY_NEW_TOKEN_ENCRYPTED').getPlainText())" | \
+java -jar jenkins-cli.jar -s $JENKINS_URL_TARGET -auth ${JENKINS_OWNER}:${JENKINS_TOKEN} groovy =)
+log "Decrypted verify: $MY_DECRYPTED_TOKEN (should match '$MY_NEW_TOKEN')"
 
 # --- Token Updates on Remote Host ---
 
 # 1. Update Plain Text Tokens
 # Specific to: multibranch-scan-webhook-trigger plugin and others using <token>
 log "Updating plain-text tokens (<token>) in config.xml files..."
-ssh $SSH_OPTS "$SSH_USER@$SSH_HOST" \
+ssh $SSH_OPTS "$SSH_USER@$MY_HOST" \
   "${SUDO} set -x && find  \"$JENKINS_HOME/jobs\" -iname 'config.xml' -exec sed -i.bak 's|<token>[^<]*</token>|<token>$MY_NEW_TOKEN</token>|g' {} \;"
 
 # 2. Update Encrypted Tokens
 # Specific to: gitlab-plugin and others using <secretToken>
 log "Updating encrypted tokens (<secretToken>) in config.xml files..."
-ssh $SSH_OPTS "$SSH_USER@$SSH_HOST" \
+ssh $SSH_OPTS "$SSH_USER@$MY_HOST" \
   "${SUDO} set -x && find  \"$JENKINS_HOME/jobs\" -iname 'config.xml' -exec sed -i.bak 's|<secretToken>[^<]*</secretToken>|<secretToken>$MY_NEW_TOKEN_ENCRYPTED</secretToken>|g' {} \;"
 
 log "Token update complete."
