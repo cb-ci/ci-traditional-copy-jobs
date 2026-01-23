@@ -27,7 +27,7 @@ log "Running the copy-jenkins-jobs-scp.sh script"
   --force
 
 # Reload Jenkins configuration on target to pick up changes
-#reloadJenkins "$JENKINS_URL_TARGET"
+reloadJenkins "$JENKINS_URL_TARGET"
 
 # Verify the copy result
 verifyResult "$TEST_JOB_NAME_SIMPLE"
