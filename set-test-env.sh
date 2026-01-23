@@ -122,7 +122,7 @@ prepareTestJob() {
     local jobName=$1
     local jobConfigFile=$2
     local container="jenkins-source"
-    set -x
+    #set -x
     log "Creating job '$jobName' on $container"
     docker exec $container mkdir -p "$JENKINS_HOME/jobs/$jobName"
     docker cp "$jobConfigFile" "$container:$JENKINS_HOME/jobs/$jobName/config.xml"

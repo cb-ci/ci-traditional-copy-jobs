@@ -13,7 +13,7 @@
 #   Jenkins home.
 
 set -Eeo pipefail
-set -x
+#set -x
 # --- Default Configuration ---
 SOURCE_JENKINS_HOME="/var/jenkins_home"
 TARGET_JENKINS_HOME="/var/jenkins_home"
