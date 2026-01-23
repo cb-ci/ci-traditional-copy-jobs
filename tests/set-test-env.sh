@@ -1,223 +1,228 @@
 #!/bin/bash
 set -e
 
+# --- Configuration: Environment ---
+export TEST_HOST="localhost"
+export SSH_USER="root"
+export SUDO="" # Set to "sudo" if needed
 
-# --- Configuration ---
+# --- Configuration: Paths ---
+# Use absolute path for scripts and test data relative to this script's directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+export TEST_DATA_DIR="$SCRIPT_DIR/testdata"
+export TEST_WORKDIR="$SCRIPT_DIR"
 
-# New token to use
+# Test data files
+export CONFIG_FILE_MB="$TEST_DATA_DIR/sample-mb-mulitscan-trigger-config.xml"
+export CONFIG_FILE_SIMPLE="$TEST_DATA_DIR/sample-simple-gitlab-config.xml"
+
+# Resource files
+export TEST_SSH_KEY_FILE="$TEST_WORKDIR/jenkins_test_key"
+export TEST_SSH_KEY_PUB="$TEST_SSH_KEY_FILE.pub"
+export JENKINS_CLI_JAR="$TEST_WORKDIR/jenkins-cli.jar"
+
+# --- Configuration: Network Ports ---
+export SOURCE_SSH_PORT="2221"
+export TARGET_SSH_PORT="2222"
+export SOURCE_JENKINS_PORT="8081"
+export TARGET_JENKINS_PORT="8082"
+
+# --- Configuration: Jenkins ---
+export JENKINS_HOME_PATH="/var/jenkins_home"
+export SOURCE_CONTAINER_NAME="jenkins-source"
+export TARGET_CONTAINER_NAME="jenkins-target"
+
+export SOURCE_JENKINS_URL="http://$TEST_HOST:$SOURCE_JENKINS_PORT"
+export TARGET_JENKINS_URL="http://$TEST_HOST:$TARGET_JENKINS_PORT"
+
+export JENKINS_ADMIN_USER="admin"
+export JENKINS_ADMIN_TOKEN="admin_token"
+export JENKINS_OWNER="jenkins" # User that owns files inside the container
+
+# --- Configuration: Job Names ---
+export TEST_JOB_MB_NAME="test-job-mb"
+export TEST_JOB_SIMPLE_NAME="test-job-simple"
 export MY_NEW_TOKEN=${1:-"mytoken"}
 
-# Sudo or not
-#SUDO="sudo -i"
-export SUDO=""
-export MY_HOST="localhost"
-# SSH Configuration
-export SSH_USER="root"
-# Define test-specific overrides/variables that match docker-compose setup
+# --- Configuration: Docker Persistent Storage ---
+export CONTROLLER_JENKINS_HOMES_PATH="$TEST_WORKDIR/jenkins_homes"
+mkdir -p "$CONTROLLER_JENKINS_HOMES_PATH"
 
-export SSH_PORT_SOURCE="2221"
-export SSH_PORT_TARGET="2222"
-export SSH_KEY_FILE="./jenkins_test_key"
-export SSH_KEY_SOURCE_FILE=${SSH_KEY_FILE}  #"./jenkins_test_key_source"
-export SSH_KEY_TARGET_FILE=${SSH_KEY_FILE}  #"./jenkins_test_key_target"
-# Note: ssh uses -p for port, scp uses -P for port
-export OPTS_COMMON=" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
-export SSH_OPTS_SOURCE="-p $SSH_PORT_SOURCE -i $SSH_KEY_SOURCE_FILE $OPTS_COMMON"
-export SSH_OPTS_TARGET="-p $SSH_PORT_TARGET -i $SSH_KEY_TARGET_FILE $OPTS_COMMON"
-export SCP_OPTS_SOURCE="-P $SSH_PORT_SOURCE -i $SSH_KEY_SOURCE_FILE $OPTS_COMMON"
-export SCP_OPTS_TARGET="-P $SSH_PORT_TARGET -i $SSH_KEY_TARGET_FILE $OPTS_COMMON"
-
-
-
-# Jenkins Configuration
-export JENKINS_HOME="/var/jenkins_home"
-export JENKINS_SOURCE_CONTAINER_PORT="8081"
-export JENKINS_TARGET_CONTAINER_PORT="8082"
-export JENKINS_SOURCE_CONTAINER_NAME="jenkins-source"
-export JENKINS_TARGET_CONTAINER_NAME="jenkins-target"
-export JENKINS_URL_SOURCE="http://$MY_HOST:$JENKINS_SOURCE_CONTAINER_PORT"
-export JENKINS_URL_TARGET="http://$MY_HOST:$JENKINS_TARGET_CONTAINER_PORT"
-export JENKINS_OWNER="jenkins"
-export JENKINS_USER="admin"
-export JENKINS_TOKEN="admin_token"
-export TEST_JOB_MB_CONFIG_FILE="./testdata/sample-mb-mulitscan-trigger-config.xml"
-export TEST_JOB_SIMPLE_CONFIG_FILE="./testdata/sample-simple-gitlab-config.xml"
-export TEST_JOB_NAME_SIMPLE="test-job-simple"
-export TEST_JOB_NAME_MB="test-job-mb"
-export CONTROLLER_JENKINS_HOMES_PATH=$(pwd)/jenkins_homes
-mkdir -p $CONTROLLER_JENKINS_HOMES_PATH
+# --- Compiled SSH/SCP Options ---
+export SSH_OPTS_COMMON="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i $TEST_SSH_KEY_FILE"
+export SOURCE_SSH_OPTS="-p $SOURCE_SSH_PORT $SSH_OPTS_COMMON"
+export TARGET_SSH_OPTS="-p $TARGET_SSH_PORT $SSH_OPTS_COMMON"
+export SOURCE_SCP_OPTS="-P $SOURCE_SSH_PORT $SSH_OPTS_COMMON"
+export TARGET_SCP_OPTS="-P $TARGET_SSH_PORT $SSH_OPTS_COMMON"
 
 # --- Helper Functions ---
+
 log() {
-  echo
-  echo "--- $1 ---"
+  echo ""
+  echo ">>> $1"
 }
 
 # Function to generate SSH key if it doesn't exist
-# Parameters:
-#   $1 - key_file: Path to the SSH key file
 generate_ssh_key_if_needed() {
-  local key_file="$1"  
-  if [ ! -f "$key_file" ] || [ ! -f "$key_file.pub" ]; then
-    log "Generating SSH key $key_file"
+  local key_file="$TEST_SSH_KEY_FILE"
+  if [ ! -f "$key_file" ]; then
+    log "Generating test SSH key: $key_file"
     ssh-keygen -t rsa -b 4096 -f "$key_file" -N ""
     chmod 600 "$key_file"
-    log "SSH key generated $key_file"
   else
-    log "SSH key already exists $key_file"
+    log "Test SSH key already exists: $key_file"
   fi
-  log "Starting SSH Agent"
-  eval "$(ssh-agent -s)"
-  ssh-add "$key_file"
+  
+  # Ensure agent is running and key is added
+  if [ -z "$SSH_AUTH_SOCK" ]; then
+    log "Starting SSH Agent..."
+    eval "$(ssh-agent -s)"
+  fi
+  ssh-add "$key_file" 2>/dev/null
 }
-
-
 
 cleanup() {    
-    log "Cleaning up any previous Docker environment"
+    log "Cleaning up Docker environment and temporary files..."
+    cd "$TEST_WORKDIR"
     docker-compose down -v --remove-orphans > /dev/null 2>&1 || true
-    rm -f "$SSH_KEY_SOURCE_FILE" "$SSH_KEY_SOURCE_FILE.pub" || true
-    rm -f "$SSH_KEY_TARGET_FILE" "$SSH_KEY_TARGET_FILE.pub" || true
-    rm -Rfv $CONTROLLER_JENKINS_HOMES_PATH/$SOURCE_JENKINS_HOME/jobs/* || true
-    rm -Rfv $CONTROLLER_JENKINS_HOMES_PATH/$TARGET_JENKINS_HOME/jobs/* || true
-    # Kill any existing ssh-agent we might have started in a previous partial run (hard to track, so rely on standard exit)
-    ssh-agent -k > /dev/null 2>&1 || true
-    # Remove known_hosts entry to avoid issues on reruns
-    ssh-keygen -R "[$MY_HOST]:$SSH_PORT_SOURCE" > /dev/null 2>&1 || true
-    ssh-keygen -R "[$MY_HOST]:$SSH_PORT_TARGET" > /dev/null 2>&1 || true
+    
+    rm -f "$TEST_SSH_KEY_FILE" "$TEST_SSH_KEY_PUB" || true
+    
+    # Clean up mapped volumes on host
+    if [ -d "$CONTROLLER_JENKINS_HOMES_PATH" ]; then
+        rm -rf "$CONTROLLER_JENKINS_HOMES_PATH"/* || true
+    fi
+
+    # Terminate SSH agent if we started it
+    if [ -n "$SSH_AGENT_PID" ]; then
+        kill "$SSH_AGENT_PID" > /dev/null 2>&1 || true
+    fi
+
+    # Clear known_hosts entries for local test ports
+    ssh-keygen -R "[$TEST_HOST]:$SOURCE_SSH_PORT" > /dev/null 2>&1 || true
+    ssh-keygen -R "[$TEST_HOST]:$TARGET_SSH_PORT" > /dev/null 2>&1 || true
 }
-
-# trap cleanup EXIT
-
 
 # Build and start Docker containers
 init() {
     cleanup
-    generate_ssh_key_if_needed "$SSH_KEY_SOURCE_FILE"
-    generate_ssh_key_if_needed "$SSH_KEY_TARGET_FILE"
+    generate_ssh_key_if_needed
 
-    log "Building and starting Docker containers"
-    # Force build to ensure rsync is installed
+    log "Building and starting Docker containers..."
+    cd "$TEST_WORKDIR"
     docker-compose up -d --build
-    log "Containers are starting in the background..."
-
+    
     # Wait for Jenkins controllers to be ready
-    log "Waiting for Jenkins controllers to be available..."
-    for port in $JENKINS_SOURCE_CONTAINER_PORT $JENKINS_TARGET_CONTAINER_PORT; do
-        log "Waiting for Jenkins on port $port..."
-        while ! curl -s "http://$MY_HOST:$port/login" | grep -q "Sign in to Jenkins"; do
-            sleep 5
+    log "Waiting for Jenkins controllers to initialize..."
+    for url in "$SOURCE_JENKINS_URL" "$TARGET_JENKINS_URL"; do
+        curl  "$url/health" |tee /dev/null | jq .
+        
+        while ! curl -s "$url/health" | jq -e .status > /dev/null 2>&1; do
+            sleep 2
         done
-        log "Jenkins on port $port is ready."
+        log "Jenkins is ready at $url"
     done
 
-    # Configure SSH access and create test job
-    log "Configuring SSH and creating test job on SOURCE"
-    for container in $JENKINS_SOURCE_CONTAINER_NAME $JENKINS_TARGET_CONTAINER_NAME; do
-        log "Configuring SSH for $container"
+    # Configure SSH access inside containers
+    log "Deploying SSH public keys to containers..."
+    for container in "$SOURCE_CONTAINER_NAME" "$TARGET_CONTAINER_NAME"; do
         docker exec "$container" bash -c "mkdir -p /root/.ssh && chmod 700 /root/.ssh"
-        docker cp "$SSH_KEY_FILE.pub" "$container:/root/.ssh/authorized_keys"
+        docker cp "$TEST_SSH_KEY_PUB" "$container:/root/.ssh/authorized_keys"
         docker exec "$container" bash -c "chmod 600 /root/.ssh/authorized_keys"
     done
 
-
-
-    # Create test jobs
-    prepareTestJob "$TEST_JOB_NAME_SIMPLE" "$TEST_JOB_SIMPLE_CONFIG_FILE"
-    prepareTestJob "$TEST_JOB_NAME_MB" "$TEST_JOB_MB_CONFIG_FILE"
+    # Prepare test jobs on source
+    prepare_test_job "$TEST_JOB_SIMPLE_NAME" "$CONFIG_FILE_SIMPLE"
+    prepare_test_job "$TEST_JOB_MB_NAME" "$CONFIG_FILE_MB"
 }   
 
-
-prepareTestJob() {
-    local jobName=$1
-    local jobConfigFile=$2
-    local container="$JENKINS_SOURCE_CONTAINER_NAME"
-    #set -x
-    log "Creating job '$jobName' on $container"
-    docker exec $container mkdir -p "$JENKINS_HOME/jobs/$jobName"
-    docker cp "$jobConfigFile" "$container:$JENKINS_HOME/jobs/$jobName/config.xml"
-    docker exec $container chown -R 1000:1000 "$JENKINS_HOME/jobs/$jobName"
-    # Also need to reload the source jenkins to make the job visible
-    #docker exec jenkins-source curl -X POST http://localhost:8080/reload
-
-    log "Verifying job exists on SOURCE before copy"
-    if docker exec $container ls "$JENKINS_HOME/jobs/" | grep -q "$jobName"; then
-        log "OK: Job '$jobName' found on SOURCE."
-    else
-        log "ERROR: Job '$jobName' not found on SOURCE."
-        exit 1
-    fi
-}
-
-
-
-# Verify the result
-verifyResult() {
-    local jobName=$1
-    log "Verifying job on TARGET after sync"
-    if docker exec $JENKINS_TARGET_CONTAINER_NAME ls "$JENKINS_HOME/jobs/" | grep -q "$jobName"; then
-        log "SUCCESS: Job '$jobName' directory found on TARGET."
-    else
-        log "FAILURE: Job '$jobName' directory NOT found on TARGET."
-        exit 1
-    fi
-    if docker exec $JENKINS_TARGET_CONTAINER_NAME test -f "$JENKINS_HOME/jobs/$jobName/config.xml"; then
-        log "SUCCESS: config.xml found in job directory on TARGET."
-    else
-        log "FAILURE: config.xml NOT found in job directory on TARGET."
-        exit 1
-    fi
-    log "Verifying job loaded in TARGET Jenkins UI (via API)"
-    #Give Jenkins a moment to load the new job after the reload
-    sleep 5
-    if curl -s "$JENKINS_URL_TARGET/api/json" | grep -q "\"name\":\"$jobName\"\""; then
-        log "SUCCESS: Job '$jobName' is visible in the Jenkins API on TARGET."
-    else
-        log "FAILURE: Job '$jobName' is NOT visible in the Jenkins API on TARGET."
-        #exit 1
-    fi
-    log "TEST SUCCEEDED!"
-}
-
-reloadJenkins() {
-  # Reload Jenkins Configurations
-  # Arguments:
-  #   $1 - jenkins_url (optional, defaults to JENKINS_HOST)
-  local jenkins_url="${1:-$JENKINS_URL_TARGET}"
-
-  log "Attempting to reload Jenkins configuration from disk on target..."  
-  CURL_OPTS=("-s" "-X" "POST")
-  
-  if [ -n "$JENKINS_USER" ] && [ -n "$JENKINS_TOKEN" ]; then
-      # Fetch CSRF crumb if protection is enabled
-      CRUMB_URL="${jenkins_url}/crumbIssuer/api/json"
-      
-      # Use sed to parse JSON to avoid dependency on jq
-      CRUMB_DATA=$(curl "${CURL_OPTS[@]}" --user "$JENKINS_USER:$JENKINS_TOKEN" "$CRUMB_URL")
-      if [[ "$CRUMB_DATA" == *"\"crumbRequestField\":"* ]]; then
-          CRUMB_HEADER=$(echo "$CRUMB_DATA" | sed -n 's/.*\"crumbRequestField\":\"\([^\"]*\)\".*/\1/p')
-          CRUMB_VALUE=$(echo "$CRUMB_DATA" | sed -n 's/.*\"crumb\":\"\([^\"]*\)\".*/\1/p')
-          
-          if [ -n "$CRUMB_HEADER" ] && [ -n "$CRUMB_VALUE" ]; then
-              CURL_OPTS+=("-H" "$CRUMB_HEADER:$CRUMB_VALUE")
-          else
-              log "Warning: Could not parse CSRF crumb from response. Reload might fail."
-          fi
-      fi
-      CURL_OPTS+=("--user" "$JENKINS_USER:$JENKINS_TOKEN")
-  fi
-  
-  RELOAD_URL="${jenkins_url}/reload"
-  
-  HTTP_STATUS=$(curl "${CURL_OPTS[@]}" --write-out "%{http_code}" --output /dev/null "$RELOAD_URL")
-  
-  if [[ "$HTTP_STATUS" -ge 200 && "$HTTP_STATUS" -lt 300 ]]; then
-    log "Successfully triggered configuration reload on target Jenkins (HTTP $HTTP_STATUS)."
-  else
-    log "Warning: Failed to trigger configuration reload. Jenkins returned HTTP status $HTTP_STATUS."
-    log "You may need to manually reload configuration via the Jenkins UI ('Manage Jenkins' -> 'Reload Configuration from Disk')."
-    log "1. Go to your Jenkins UI -> Manage Jenkins."
-    log "2. Click 'Reload Configuration from Disk'."
-  fi
-}
+prepare_test_job() {
+    local job_name="$1"
+    local config_file="$2"
+    local container="$SOURCE_CONTAINER_NAME"
     
+    log "Creating test job '$job_name' on $container"
+    docker exec "$container" mkdir -p "$JENKINS_HOME_PATH/jobs/$job_name"
+    docker cp "$config_file" "$container:$JENKINS_HOME_PATH/jobs/$job_name/config.xml"
+    docker exec "$container" chown -R 1000:1000 "$JENKINS_HOME_PATH/jobs/$job_name"
+
+    # Quick verify
+    if docker exec "$container" ls "$JENKINS_HOME_PATH/jobs/$job_name/config.xml" > /dev/null 2>&1; then
+        log "OK: Job '$job_name' created."
+    else
+        log "ERROR: Failed to create job '$job_name'."
+        exit 1
+    fi
+}
+
+verify_result() {
+    local job_name="$1"
+    local container="$TARGET_CONTAINER_NAME"
+    local url="$TARGET_JENKINS_URL"
+    
+    log "Verifying job '$job_name' on $container..."
+    
+    if docker exec "$container" test -f "$JENKINS_HOME_PATH/jobs/$job_name/config.xml"; then
+        log "SUCCESS: config.xml found on TARGET."
+    else
+        log "FAILURE: config.xml NOT found on TARGET."
+        exit 1
+    fi
+
+    log "Checking Jenkins API for job visibility..."
+    # Give it a moment to possibly load if not reloaded yet
+    local wait=0
+    while [ $wait -lt 15 ]; do
+      if curl -s "$url/api/json" | grep -q "\"name\":\"$job_name\""; then
+          log "SUCCESS: Job '$job_name' is visible in API."
+          return 0
+      fi
+      sleep 3
+      wait=$((wait + 3))
+    done
+    
+    log "WARNING: Job '$job_name' not visible in API yet. Manual reload might be needed."
+}
+
+verify_token_update() {
+  local job_name="$1"
+  local container="$TARGET_CONTAINER_NAME"
+  
+  log "Verifying tokens for job: $job_name"
+  
+  # Check if backup exists
+  if docker exec "$container" test -f "$JENKINS_HOME_PATH/jobs/$job_name/config.xml.bak"; then
+      log "Backup file found."
+  fi
+  
+  # Show token values from config
+  log "Current token values in config.xml:"
+  docker exec "$container" cat "$JENKINS_HOME_PATH/jobs/$job_name/config.xml" | grep -i token || echo "No tokens found."
+}
+
+reload_jenkins() {
+  local url="${1:-$TARGET_JENKINS_URL}"
+  local user="${2:-$JENKINS_ADMIN_USER}"
+  local token="${3:-$JENKINS_ADMIN_TOKEN}"
+
+  log "Triggering Jenkins configuration reload at $url"
+  
+  local curl_opts=("-s" "-X" "POST" "--user" "$user:$token")
+  
+  # Get CSRF crumb
+  local crumb_resp=$(curl -s --user "$user:$token" "$url/crumbIssuer/api/json")
+  if [[ "$crumb_resp" == *"crumbRequestField"* ]]; then
+      local header=$(echo "$crumb_resp" | sed -n 's/.*"crumbRequestField":"\([^"]*\)".*/\1/p')
+      local value=$(echo "$crumb_resp" | sed -n 's/.*"crumb":"\([^"]*\)".*/\1/p')
+      curl_opts+=("-H" "$header:$value")
+  fi
+  
+  local status=$(curl "${curl_opts[@]}" --write-out "%{http_code}" --output /dev/null "$url/reload")
+  
+  if [[ "$status" -ge 200 && "$status" -lt 300 ]]; then
+    log "Reload triggered successfully (HTTP $status)."
+  else
+    log "ERROR: Reload failed (HTTP $status). You might need to reload manually via UI."
+  fi
+}

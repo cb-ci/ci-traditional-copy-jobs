@@ -280,20 +280,23 @@ source ./set-test-env.sh
 
 Shared environment configuration and helper functions for all test scripts. This centralizes common configuration to follow the DRY principle.
 
-**Exported Variables:**
-- SSH configuration (keys, ports, options)
-- Jenkins configuration (home, host, credentials)
-- Test job configuration files
-- Docker environment paths
+**Key Exported Variables:**
+- `TEST_HOST` - Hostname for testing (usually `localhost`)
+- `SOURCE_SSH_PORT` / `TARGET_SSH_PORT` - SSH ports for containers
+- `SOURCE_JENKINS_URL` / `TARGET_JENKINS_URL` - Jenkins access URLs
+- `JENKINS_ADMIN_USER` / `JENKINS_ADMIN_TOKEN` - Credentials for Jenkins CLI/API
+- `SOURCE_SSH_OPTS` / `TARGET_SSH_OPTS` - Pre-configured SSH command strings
+- `TEST_JOB_SIMPLE_NAME` / `TEST_JOB_MB_NAME` - Standardized test job names
 
 **Helper Functions:**
-- `log()` - Formatted logging output with visual separators
-- `generate_ssh_key_if_needed()` - Generate SSH keys if they don't exist, start SSH agent and add keys
-- `cleanup()` - Clean up Docker containers, temporary files, and SSH keys (runs on EXIT via trap)
-- `init()` - Build and start Docker containers, wait for Jenkins to be ready, configure SSH access
-- `prepareTestJob()` - Deploy a test job configuration to the source Jenkins instance
-- `verifyResult()` - Verify job was successfully copied/synced to target Jenkins (checks filesystem and API)
-- `verify_token_update()` - Verify webhook tokens were updated correctly (shows diff, file details, and token values)
+- `log()` - Formatted logging output
+- `generate_ssh_key_if_needed()` - Manages test SSH keys and agent
+- `cleanup()` - Robust teardown of Docker and temporary host files
+- `init()` - Full environment bootstrap (cleanup -> keys -> docker up -> wait -> configure -> deploy jobs)
+- `prepare_test_job()` - Deploys XML job configurations to the source
+- `verify_result()` - Validates job existence on target filesystem and via Jenkins API
+- `reload_jenkins()` - Triggers a configuration reload on the target instance
+- `verify_token_update()` - Detailed inspection of webhook tokens in config.xml
 
 **Usage:**
 ```bash

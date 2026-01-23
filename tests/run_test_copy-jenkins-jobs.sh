@@ -1,47 +1,48 @@
 #!/bin/bash
 set -e
-#set -x
-# --- Configuration ---
-source ./set-test-env.sh
 
-# Initialize the test environment
+# --- Configuration ---
+# Get current script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/set-test-env.sh"
+
+# Initialize the test environment (cleanup, keys, containers, source jobs)
 init
 
-# Run the copy script (SCP version)
+# --- Execution ---
+
 log "Running the copy-jenkins-jobs-scp.sh script"
-../copy-jenkins-jobs-scp.sh \
-  --source-host "$MY_HOST" \
-  --target-host "$MY_HOST" \
+"$PROJECT_ROOT/copy-jenkins-jobs-scp.sh" \
+  --source-host "$TEST_HOST" \
+  --target-host "$TEST_HOST" \
   --source-user "$SSH_USER" \
   --target-user "$SSH_USER" \
-  --ssh-port-source "$SSH_PORT_SOURCE" \
-  --ssh-port-target "$SSH_PORT_TARGET" \
-  --ssh-key-source "$SSH_KEY_FILE" \
-  --ssh-key-target "$SSH_KEY_FILE" \
-  --job-path "$TEST_JOB_NAME_SIMPLE" \
-  --job-path "$TEST_JOB_NAME_MB" \
-  --jenkins-user "$JENKINS_USER" \
-  --jenkins-token "$JENKINS_TOKEN" \
-  --jenkins-url-target "$JENKINS_URL_TARGET" \
+  --ssh-port-source "$SOURCE_SSH_PORT" \
+  --ssh-port-target "$TARGET_SSH_PORT" \
+  --ssh-key-source "$TEST_SSH_KEY_FILE" \
+  --ssh-key-target "$TEST_SSH_KEY_FILE" \
+  --job-path "$TEST_JOB_SIMPLE_NAME" \
+  --job-path "$TEST_JOB_MB_NAME" \
+  --jenkins-user "$JENKINS_ADMIN_USER" \
+  --jenkins-token "$JENKINS_ADMIN_TOKEN" \
+  --jenkins-url-target "$TARGET_JENKINS_URL" \
   --verbose \
   --force
 
 # Reload Jenkins configuration on target to pick up changes
-reloadJenkins "$JENKINS_URL_TARGET"
+reload_jenkins "$TARGET_JENKINS_URL"
 
 # Verify the copy result
-verifyResult "$TEST_JOB_NAME_SIMPLE"
-verifyResult "$TEST_JOB_NAME_MB"
+verify_result "$TEST_JOB_SIMPLE_NAME"
+verify_result "$TEST_JOB_MB_NAME"
 
 # Update webhook tokens
-../updateJenkinsConfigTokens.sh
+log "Updating webhook tokens..."
+"$PROJECT_ROOT/updateJenkinsConfigTokens.sh"
 
+# Note: updateJenkinsConfigTokens.sh currently has its own verification at the end.
+# If we want to verify here specifically:
+# verify_token_update "$TEST_JOB_SIMPLE_NAME"
+# verify_token_update "$TEST_JOB_MB_NAME"
 
-
-
-
-
-
-
-
-
+log "SCP Copy Integration Test Finished Successfully!"
