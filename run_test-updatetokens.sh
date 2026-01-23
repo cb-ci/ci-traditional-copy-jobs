@@ -21,8 +21,8 @@ deploy_job_config() {
   scp $SCP_OPTS "$config_file" "$SSH_USER@$SSH_HOST:$JENKINS_HOME/jobs/$job_path/config.xml"
   
   # Backup the job config file
-  ssh $SSH_OPTS "$SSH_USER@$SSH_HOST" \
-    "${SUDO} set -x && cp \"$JENKINS_HOME/jobs/$job_path/config.xml\" \"$JENKINS_HOME/jobs/$job_path/config.xml.bak\""
+  #ssh $SSH_OPTS "$SSH_USER@$SSH_HOST" \
+  #  "${SUDO} set -x && cp \"$JENKINS_HOME/jobs/$job_path/config.xml\" \"$JENKINS_HOME/jobs/$job_path/config.xml.bak\""
 }
 
 # Deploy test jobs

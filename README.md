@@ -5,7 +5,9 @@ This repository contains scripts to copy Jenkins jobs from a source controller t
 ## Scripts
 
 1.  **`copy-jenkins-jobs-scp.sh`**: Uses `scp` and `tar` to archive and transfer jobs. Good for simple transfers or when `rsync` is not available.
-2.  **`sync-jobs-rsync.sh`**: Uses `rsync` over SSH. Efficient for syncing large jobs or incremental updates. Supports exclusions for build artifacts.
+2.  **`copy-jenkins-jobs-rsync.sh`**: Uses `rsync` over SSH. Efficient for syncing large jobs or incremental updates. Supports exclusions for build artifacts.
+3.  **`updateJenkinsConfigTokens.sh`**: Updates webhook tokens in Jenkins job configurations (both plain-text and encrypted tokens).
+4.  **`set-test-env.sh`**: Shared test environment configuration and helper functions for all test scripts.
 
 ---
 
@@ -49,7 +51,7 @@ sequenceDiagram
     Local->>Target: SSH: Cleanup temp files
 ```
 
-### `sync-jobs-rsync.sh` (Rsync Push)
+### `copy-jenkins-jobs-rsync.sh` (Rsync Push)
 
 Data flows directly between controllers. Source authenticates to Target using the Admin's SSH Agent.
 
@@ -60,7 +62,7 @@ sequenceDiagram
     participant Source as Source Controller
     participant Target as Target Controller
 
-    note over Local, Target: sync-jobs-rsync.sh (Direct Push using Agent Forwarding)
+    note over Local, Target: copy-jenkins-jobs-rsync.sh (Direct Push using Agent Forwarding)
 
     note left of Local: SSH Agent has keys<br/>for Source & Target
     
@@ -188,7 +190,7 @@ Preview the operations without making any changes.
 
 ---
 
-## `sync-jobs-rsync.sh`
+## `copy-jenkins-jobs-rsync.sh`
 
 This script uses `rsync` over SSH to synchronize jobs. It is more efficient for transfers (incremental) and allows powerful filtering.
 
@@ -202,7 +204,7 @@ This script uses `rsync` over SSH to synchronize jobs. It is more efficient for 
 ### Usage
 
 ```sh
-./sync-jobs-rsync.sh [OPTIONS]
+./copy-jenkins-jobs-rsync.sh [OPTIONS]
 ```
 
 **Required:**
@@ -231,7 +233,7 @@ This script uses `rsync` over SSH to synchronize jobs. It is more efficient for 
 Synchronize a job while excluding the workspace and build history (default behavior includes excluding `workspace/`, `lastStable`, etc., but you can add more).
 
 ```sh
-./sync-jobs-rsync.sh \
+./copy-jenkins-jobs-rsync.sh \
   --source-host source.jenkins.example.com --source-user admin \
   --target-host target.jenkins.example.com --target-user admin \
   --job-path "MyFolder/MyJob" \
@@ -244,7 +246,7 @@ Synchronize a job while excluding the workspace and build history (default behav
 This will make the target directory an exact mirror of the source, DELETING any files on the target that are not present on the source (use with caution).
 
 ```sh
-./sync-jobs-rsync.sh \
+./copy-jenkins-jobs-rsync.sh \
   --source-host source.jenkins.example.com --source-user admin \
   --target-host target.jenkins.example.com --target-user admin \
   --job-path "MyProject" \
@@ -420,3 +422,119 @@ Cleanup complete.
 
 
 ```
+---
+
+## Utility Scripts
+
+### `updateJenkinsConfigTokens.sh`
+
+This script updates webhook tokens in Jenkins job configuration files. It handles both plain-text tokens (for multibranch-scan-webhook-trigger plugin) and encrypted tokens (for GitLab plugin).
+
+**Features:**
+- Encrypts tokens using Jenkins' built-in Secret encryption
+- Updates `<token>` elements (plain-text for multibranch webhook triggers)
+- Updates `<secretToken>` elements (encrypted for GitLab webhooks)
+- Uses `jenkins-cli.jar` for token encryption
+
+**Usage:**
+```bash
+source ./set-test-env.sh
+./updateJenkinsConfigTokens.sh
+```
+
+**Environment Variables Required:**
+- `MY_NEW_TOKEN` - The new token value to set
+- `JENKINS_HOST` - Jenkins URL (e.g., http://localhost:8082)
+- `JENKINS_OWNER` - Jenkins username for authentication
+- `JENKINS_TOKEN` - Jenkins API token
+- `SSH_OPTS` - SSH connection options
+- `SSH_USER`, `SSH_HOST` - Remote host credentials
+- `JENKINS_HOME` - Jenkins home directory path on remote host
+
+### `set-test-env.sh`
+
+Shared environment configuration and helper functions for all test scripts. This centralizes common configuration to follow the DRY principle.
+
+**Exported Variables:**
+- SSH configuration (keys, ports, options)
+- Jenkins configuration (home, host, credentials)
+- Test job configuration files
+- Docker environment paths
+
+**Helper Functions:**
+- `log()` - Formatted logging output
+- `generate_ssh_key_if_needed()` - Generate SSH keys if they don't exist
+- `cleanup()` - Clean up Docker containers and temporary files
+- `dockerComposeUp()` - Start and configure Docker test environment
+- `prepareTestJob()` - Deploy test job to Jenkins
+- `verifyResult()` - Verify job was successfully copied/synced
+
+**Usage:**
+```bash
+source ./set-test-env.sh
+# Now all variables and functions are available
+```
+
+---
+
+## Test Scripts
+
+### `run_test_copy-jenkins-jobs.sh`
+
+Integration test for `copy-jenkins-jobs-scp.sh`. Spins up Docker containers with Jenkins instances and tests the SCP-based job copy functionality.
+
+**What it tests:**
+- Job copying via SCP/tar method
+- SSH key authentication
+- Job verification on target
+- Configuration reload
+
+**Run:**
+```bash
+./run_test_copy-jenkins-jobs.sh
+```
+
+### `run_tests_sync-jobs-rsync.sh`
+
+Integration test for `copy-jenkins-jobs-rsync.sh`. Tests the rsync-based job synchronization with SSH agent forwarding.
+
+**What it tests:**
+- Job syncing via rsync
+- SSH agent forwarding
+- Incremental updates
+- Dry-run mode
+
+**Run:**
+```bash
+./run_tests_sync-jobs-rsync.sh
+```
+
+### `run_test-updatetokens.sh`
+
+Integration test for `updateJenkinsConfigTokens.sh`. Tests token update functionality for both plain-text and encrypted webhook tokens.
+
+**What it tests:**
+- Deployment of test jobs with sample tokens
+- Token encryption via Jenkins CLI
+- Token replacement in config.xml files
+- Verification of token updates
+
+**Run:**
+```bash
+./run_test-updatetokens.sh
+```
+
+---
+
+## Development
+
+All test scripts use the shared `set-test-env.sh` for configuration. To modify test parameters, edit the environment variables in that file.
+
+**Docker Environment:**
+- Source Jenkins: `localhost:8081` (SSH port 2221)
+- Target Jenkins: `localhost:8082` (SSH port 2222)
+- Both run Jenkins LTS with SSH and rsync installed
+
+**Cleanup:**
+Test scripts use a `trap cleanup EXIT` to ensure Docker containers are stopped and temporary files are removed even if tests fail.
+

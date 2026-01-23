@@ -21,7 +21,7 @@ java -jar jenkins-cli.jar -s $JENKINS_HOST -auth ${JENKINS_OWNER}:${JENKINS_TOKE
 # It will update the token in the config.xml file
 # Other triggers like gitlab or github webhook trigger might have different tokens patterns or configuration file paths
 ssh $SSH_OPTS "$SSH_USER@$SSH_HOST" \
-  "${SUDO} set -x && find  \"$JENKINS_HOME/jobs\" -iname 'config.xml' -exec sed -i 's|<token>[^<]*</token>|<token>$MY_NEW_TOKEN</token>|g' {} \;"
+  "${SUDO} set -x && find  \"$JENKINS_HOME/jobs\" -iname 'config.xml' -exec sed -i.bak 's|<token>[^<]*</token>|<token>$MY_NEW_TOKEN</token>|g' {} \;"
 
 # This replacement is specifc to gitlab plugin
 # The gitlab plugin uses a ENCRYPTED token to authenticate webhooks
@@ -29,4 +29,4 @@ ssh $SSH_OPTS "$SSH_USER@$SSH_HOST" \
 # Other triggers like gitlab or github webhook trigger might have different tokens patterns or configuration file paths
 
 ssh $SSH_OPTS "$SSH_USER@$SSH_HOST" \
-  "${SUDO} set -x && find  \"$JENKINS_HOME/jobs\" -iname 'config.xml' -exec sed -i 's|<secretToken>[^<]*</secretToken>|<secretToken>$MY_NEW_TOKEN_ENCRYPTED</secretToken>|g' {} \;"
+  "${SUDO} set -x && find  \"$JENKINS_HOME/jobs\" -iname 'config.xml' -exec sed -i.bak 's|<secretToken>[^<]*</secretToken>|<secretToken>$MY_NEW_TOKEN_ENCRYPTED</secretToken>|g' {} \;"
