@@ -63,7 +63,6 @@ generate_ssh_key_if_needed() {
 
 
 cleanup() {    
-    # 1. Cleanup previous runs
     log "Cleaning up any previous Docker environment"
     docker-compose down -v --remove-orphans > /dev/null 2>&1 || true
     rm -f "$SSH_KEY_SOURCE_FILE" "$SSH_KEY_SOURCE_FILE.pub" || true
@@ -82,11 +81,7 @@ cleanup() {
 
 # Build and start Docker containers
 init() {
-    # --- Test Workflow ---
-    # Cleanup previous runs
     cleanup
-
-    # Generate SSH keys for source and target
     generate_ssh_key_if_needed "$SSH_KEY_SOURCE_FILE"
     generate_ssh_key_if_needed "$SSH_KEY_TARGET_FILE"
 
