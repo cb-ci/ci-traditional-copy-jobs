@@ -184,7 +184,7 @@ reloadJenkins() {
   # Reload Jenkins Configurations
   # Arguments:
   #   $1 - jenkins_url (optional, defaults to JENKINS_HOST)
-  local jenkins_url="${1:-$JENKINS_HOST}"
+  local jenkins_url="${1:-$JENKINS_URL_TARGET}"
 
   log "Attempting to reload Jenkins configuration from disk on target..."  
   CURL_OPTS=("-s" "-X" "POST")
