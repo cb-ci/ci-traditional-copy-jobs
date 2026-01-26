@@ -82,35 +82,8 @@ sequenceDiagram
 
 ### Security & SSH Key Management
 
-The `rsync` script relies on **SSH Agent Forwarding** to securely authenticate between the source and target without storing long-lived credentials on the source host.
+The [text](copy-jenkins-jobs-rsync.sh) script relies on **SSH Agent Forwarding** to securely authenticate between the source and target without storing long-lived credentials on the source host.
 
-```mermaid
-graph TD
-    subgraph Laptop ["Admin Laptop"]
-        Agent[SSH Agent]
-        S_Key[Local SSH_KEY_FILE]
-        Agent ---|Holds Identities| S_Key
-    end
-
-    subgraph Source ["Source Controller"]
-        T_Key[Remote TARGET_SSH_KEY]
-        F_Agent[Forwarded Agent]
-    end
-
-    subgraph Target ["Target Controller"]
-        T_Auth[Authorized Keys]
-    end
-
-    S_Key ==>|"1. Connect to Source"| Source
-    Agent -.->|"2. SSH Agent Forwarding (-A)"| F_Agent
-    T_Key -.->|"3. Identity Hint (-i)"| F_Agent
-    F_Agent ==>|"4. Authenticate to Target"| Target
-    Target ---|Validates| T_Auth
-
-    style Laptop fill:#f9f,stroke:#333,stroke-width:2px
-    style Source fill:#bbf,stroke:#333,stroke-width:2px
-    style Target fill:#bfb,stroke:#333,stroke-width:2px
-```
 
 1.  **Local SSH_KEY_FILE**: Used by the script on your laptop to authenticate and gain access to the **Source Controller**.
 2.  **SSH Agent Forwarding**: The `-A` flag allows the **Source Controller** to "borrow" the SSH identities from your local machine's agent for subsequent connections.
