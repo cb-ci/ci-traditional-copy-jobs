@@ -101,10 +101,10 @@ graph TD
         T_Auth[Authorized Keys]
     end
 
-    S_Key ==>|1. Connect to Source| Source
-    Agent -.->|2. SSH Agent Forwarding (-A)| F_Agent
-    T_Key -.->|3. Identity Hint (-i)| F_Agent
-    F_Agent ==>|4. Authenticate to Target| Target
+    S_Key ==>|"1. Connect to Source"| Source
+    Agent -.->|"2. SSH Agent Forwarding (-A)"| F_Agent
+    T_Key -.->|"3. Identity Hint (-i)"| F_Agent
+    F_Agent ==>|"4. Authenticate to Target"| Target
     Target ---|Validates| T_Auth
 
     style Laptop fill:#f9f,stroke:#333,stroke-width:2px
