@@ -82,7 +82,7 @@ sequenceDiagram
 
 ### Security & SSH Key Management
 
-The [copy-jenkins-jobs-rsync.sh](copy-jenkins-jobs-rsync.sh) script relies on **SSH Agent Forwarding** to securely authenticate between the source and target without storing long-lived credentials on the source host.
+The [copy-jenkins-jobs-rsync.sh](copy-jenkins-jobs-rsync.sh) script relies on [SSH Agent Forwarding](http://www.unixwiz.net/techtips/ssh-agent-forwarding.html) to securely authenticate between the source and target without storing long-lived credentials on the source host.
 
 
 1.  **Local SSH_KEY_FILE**: Used by the script on your laptop to authenticate and gain access to the **Source Controller**.
