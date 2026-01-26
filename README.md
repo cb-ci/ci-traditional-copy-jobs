@@ -218,13 +218,17 @@ This script uses `rsync` over SSH to synchronize jobs. It is more efficient for 
 
 **Optional:**
 ```
-  `--exclude <pattern>`           Rsync exclude pattern (e.g., 'builds/', 'workspace/').
+  `--source-jenkins-home <path>`  Path to Jenkins home on the source. (Default: /var/jenkins_home)
+  `--target-jenkins-home <path>`  Path to Jenkins home on the target. (Default: /var/jenkins_home)
+  `--ssh-port-source <port>`      SSH port for the source host (Default: 22).
+  `--ssh-port-target <port>`      SSH port for the target host (Default: 22).
+  `--target-ssh-key <path>`       Path to the SSH private key for the target host (used by rsync on the source). (Default: ~/.ssh/id_ed25519)
+  `--exclude <pattern>`           Rsync exclude pattern (e.g., 'builds/', 'workspace/'). Can be specified multiple times.
   `--delete`                      Delete extraneous files on the target (`rsync --delete`).
-  `--dry-run`                     Show what would be done.
+  `--dry-run`                     Show what would be done without making changes.
   `--verbose`                     Enable verbose logging.
-  `--ssh-port-source <port>`      (Default: 22)
-  `--ssh-port-target <port>`      (Default: 22)
- ```
+  `--help`                        Display this help message.
+```
 
 ### Examples
 
@@ -237,6 +241,7 @@ Synchronize a job while excluding the workspace and build history.
   --source-host source.jenkins.example.com --source-user admin \
   --target-host target.jenkins.example.com --target-user admin \
   --ssh-key-file ~/.ssh/id_rsa_source \
+  --target-ssh-key ~/.ssh/id_rsa_target \
   --job-path "MyFolder/MyJob" \
   --exclude "builds/" \
   --dry-run

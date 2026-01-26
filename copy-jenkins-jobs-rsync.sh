@@ -21,14 +21,15 @@ set -Eeo pipefail
 # --- Default Configuration ---
 SOURCE_JENKINS_HOME="/var/jenkins_home"
 TARGET_JENKINS_HOME="/var/jenkins_home"
-SSH_PORT_SOURCE="2221"
-SSH_PORT_TARGET="2222"
+SSH_PORT_SOURCE="22"
+SSH_PORT_TARGET="22"
 JENKINS_OWNER="root"
 DRY_RUN=false
 DELETE=false
-VERBOSE=false
+VERIFY=false
 JOB_PATHS=()
 EXCLUDES=()
+TARGET_SSH_KEY="~/.ssh/id_ed25519"
 
 # --- Script self-awareness ---
 SCRIPT_NAME=$(basename "$0")
@@ -73,6 +74,9 @@ Optional:
                                 (Default: /var/jenkins_home)
   --ssh-port-source <port>      SSH port for the source host (Default: 22).
   --ssh-port-target <port>      SSH port for the target host (Default: 22).
+  --target-ssh-key <path>       Path to the SSH private key for the target host
+                                (used by rsync on the source).
+                                (Default: ~/.ssh/id_ed25519)
   --exclude <pattern>           Rsync exclude pattern (e.g., 'builds/', 'workspace/').
                                 Can be specified multiple times.
   --delete                      Delete extraneous files on the target (rsync --delete).
@@ -108,6 +112,7 @@ while [ $# -gt 0 ]; do
     --target-jenkins-home) TARGET_JENKINS_HOME="$2"; shift 2 ;;
     --ssh-port-source) SSH_PORT_SOURCE="$2"; shift 2 ;;
     --ssh-port-target) SSH_PORT_TARGET="$2"; shift 2 ;;
+    --target-ssh-key) TARGET_SSH_KEY="$2"; shift 2 ;;
     --exclude) EXCLUDES+=("--exclude" "$2"); shift 2 ;;
     --delete) DELETE=true; shift 1 ;;
     --dry-run) DRY_RUN=true; shift 1 ;;
@@ -118,9 +123,9 @@ while [ $# -gt 0 ]; do
 done
 
 # --- Validation ---
-if [ -z "$SOURCE_HOST" ] || [ -z "$TARGET_HOST" ] || [ -z "$SOURCE_USER" ] || [ -z "$TARGET_USER" || [ -z "$SSH_KEY_FILE" ]; then
-  log "$"
-  die "Source/Target host,user and ssh key are required. See --help."
+if [ -z "$SOURCE_HOST" ] || [ -z "$TARGET_HOST" ] || [ -z "$SOURCE_USER" ] || [ -z "$TARGET_USER" ] || [ -z "$SSH_KEY_FILE" ]; then
+  log "Missing required parameters."
+  die "Source/Target host, user and ssh key are required. See --help."
 fi
 if [ ${#JOB_PATHS[@]} -eq 0 ]; then
   die "At least one --job-path must be specified."
@@ -139,10 +144,7 @@ fi
 # -v: verbose
 # -z: compress
 # -R: use relative path names (crucial for preserving directory structure)
-#RSYNC_OPTS="-avzR -e \"ssh -p $SSH_PORT_TARGET -o StrictHostKeyChecking=no\""
-SSH_PORT_TARGET=22
-# TODO: we need a paramter for this  ~/.ssh/id_ed25519  
-RSYNC_OPTS="-avzR -e \"ssh -p $SSH_PORT_TARGET -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no\""
+RSYNC_OPTS="-avzR -e \"ssh -p $SSH_PORT_TARGET -i $TARGET_SSH_KEY -o StrictHostKeyChecking=no\""
 
 if [ "$DRY_RUN" = true ]; then
   RSYNC_OPTS="$RSYNC_OPTS --dry-run"

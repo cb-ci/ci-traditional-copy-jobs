@@ -19,8 +19,9 @@ log "Testing copy-jenkins-jobs-rsync.sh (Dry Run)"
   --source-user "$SSH_USER" \
   --target-user "$SSH_USER" \
   --ssh-key-file "$TEST_SSH_KEY_FILE" \
+  --target-ssh-key "~/.ssh/$TEST_SSH_KEY_FILE_NAME" \
   --ssh-port-source "$SOURCE_SSH_PORT" \
-  --ssh-port-target "$TARGET_SSH_PORT" \
+  --ssh-port-target "22" \
   --job-path "$TEST_JOB_SIMPLE_NAME" \
   --job-path "$TEST_JOB_MB_NAME" \
   --dry-run \
@@ -34,8 +35,9 @@ log "Dry run complete. Now running actual sync..."
   --source-user "$SSH_USER" \
   --target-user "$SSH_USER" \
   --ssh-key-file "$TEST_SSH_KEY_FILE" \
+  --target-ssh-key "~/.ssh/$TEST_SSH_KEY_FILE_NAME" \
   --ssh-port-source "$SOURCE_SSH_PORT" \
-  --ssh-port-target "$TARGET_SSH_PORT" \
+  --ssh-port-target "22" \
   --job-path "$TEST_JOB_SIMPLE_NAME" \
   --job-path "$TEST_JOB_MB_NAME" \
   --delete \
