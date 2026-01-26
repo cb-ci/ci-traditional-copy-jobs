@@ -18,7 +18,8 @@ export CONFIG_FILE_MB="$TEST_DATA_DIR/sample-mb-mulitscan-trigger-config.xml"
 export CONFIG_FILE_SIMPLE="$TEST_DATA_DIR/sample-simple-gitlab-config.xml"
 
 # Resource files
-export TEST_SSH_KEY_FILE="$TEST_WORKDIR/id_ed25519"
+export TEST_SSH_KEYFILE_NAME="id_ed25519"
+export TEST_SSH_KEY_FILE="$TEST_WORKDIR/$TEST_SSH_KEYFILE_NAME"
 export TEST_SSH_KEY_PUB="$TEST_SSH_KEY_FILE.pub"
 export JENKINS_CLI_JAR="$TEST_WORKDIR/jenkins-cli.jar"
 
