@@ -141,7 +141,8 @@ fi
 # -R: use relative path names (crucial for preserving directory structure)
 #RSYNC_OPTS="-avzR -e \"ssh -p $SSH_PORT_TARGET -o StrictHostKeyChecking=no\""
 SSH_PORT_TARGET=22
-RSYNC_OPTS="-avzR -e \"ssh -p $SSH_PORT_TARGET -i $SSH_KEY_FILE -o StrictHostKeyChecking=no\""
+# TODO: we need a paramter for this  ~/.ssh/id_ed25519  
+RSYNC_OPTS="-avzR -e \"ssh -p $SSH_PORT_TARGET -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no\""
 
 if [ "$DRY_RUN" = true ]; then
   RSYNC_OPTS="$RSYNC_OPTS --dry-run"
