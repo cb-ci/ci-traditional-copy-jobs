@@ -183,7 +183,7 @@ for job_path in "${JOB_PATHS[@]}"; do
   # 1. Verify job exists on SOURCE
   verbose_log "Verifying source path: $SOURCE_USER@$SOURCE_HOST:$full_source_path"
   # shellcheck disable=SC2086
-  if ! ssh $SSH_OPTS_SOURCE "$SOURCE_USER@$SOURCE_HOST" "${SUDO} test -d '$full_source_path'"; then
+  if ! ssh $SSH_OPTS_SOURCE "$SOURCE_USER@$SOURCE_HOST" "${SUDO} ls -d '$full_source_path'"; then
     log "Warning: Source job directory not found: '$full_source_path'. Skipping."
     SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
     continue
