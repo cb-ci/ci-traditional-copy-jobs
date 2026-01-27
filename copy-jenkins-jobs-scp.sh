@@ -26,7 +26,7 @@ DRY_RUN=false
 VERBOSE=false
 FORCE=false
 JOB_PATHS=()
-#SUDO="sudo su -i "
+#SUDO="sudo -i "
 SUDO=""
 
 # --- Script self-awareness ---
@@ -192,7 +192,7 @@ for job_path in "${JOB_PATHS[@]}"; do
   # 2. Check if job exists on TARGET
   verbose_log "Verifying target path: $TARGET_USER@$TARGET_HOST:$full_target_path"
   # shellcheck disable=SC2086
-  if ssh $SSH_OPTS_TARGET "$TARGET_USER@$TARGET_HOST" "${SUDO} test -d '$full_target_path'"; then
+  if ssh $SSH_OPTS_TARGET "$TARGET_USER@$TARGET_HOST" "${SUDO} ls -d '$full_target_path'"; then
     if [ "$FORCE" = false ]; then
       log "Warning: Job '$job_path' already exists on target. Use --force to overwrite. Skipping."
       SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
