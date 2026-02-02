@@ -38,8 +38,9 @@ export SOURCE_JENKINS_URL="http://$TEST_HOST:$SOURCE_JENKINS_PORT"
 export TARGET_JENKINS_URL="http://$TEST_HOST:$TARGET_JENKINS_PORT"
 
 export JENKINS_ADMIN_USER="admin"
-export JENKINS_ADMIN_TOKEN="admin_token"
-export JENKINS_OWNER="jenkins" # User that owns files inside the container
+export JENKINS_ADMIN_PASSWORD="admin"
+#export JENKINS_OWNER="cloudbees-core-cm" # User that owns files inside the container
+export JENKINS_OWNER="root" # User that owns files inside the container
 
 # --- Configuration: Job Names ---
 export TEST_JOB_MB_NAME="test-job-mb"
@@ -139,6 +140,10 @@ init() {
         done
     done
 
+    # Get the admin tokens from the source and target Jenkins controllers
+    export JENKINS_ADMIN_TOKEN_SOURCE=$(docker exec "$SOURCE_CONTAINER_NAME" cat "$JENKINS_HOME_PATH/tmp_token.txt")
+    export JENKINS_ADMIN_TOKEN_TARGET=$(docker exec "$TARGET_CONTAINER_NAME" cat "$JENKINS_HOME_PATH/tmp_token.txt")
+    
     # Configure SSH access inside containers
     log "Deploying SSH public keys to containers..."
     for container in "$SOURCE_CONTAINER_NAME" "$TARGET_CONTAINER_NAME"; do
@@ -162,7 +167,7 @@ prepare_test_job() {
     log "Creating test job '$job_name' on $container"
     docker exec "$container" mkdir -p "$JENKINS_HOME_PATH/jobs/$job_name"
     docker cp "$config_file" "$container:$JENKINS_HOME_PATH/jobs/$job_name/config.xml"
-    docker exec "$container" chown -R 1000:1000 "$JENKINS_HOME_PATH/jobs/$job_name"
+    #docker exec "$container" chown -R $JENKINS_OWNER:$JENKINS_OWNER "$JENKINS_HOME_PATH/jobs/ && chmod -R 755 $JENKINS_HOME_PATH/jobs/"
 
     # Quick verify
     if docker exec "$container" ls "$JENKINS_HOME_PATH/jobs/$job_name/config.xml" > /dev/null 2>&1; then
@@ -235,9 +240,9 @@ reload_jenkins() {
       curl_opts+=("-H" "$header:$value")
   fi
   
-  local status=$(curl "${curl_opts[@]}" --write-out "%{http_code}" --output /dev/null "$url/reload")
+  local status=$(curl  "${curl_opts[@]}" --write-out "%{http_code}" --output /dev/null "$url/reload")
   
-  if [[ "$status" -ge 200 && "$status" -lt 300 ]]; then
+  if [[ "$status" -ge 200 && "$status" -lt 304 ]]; then
     log "Reload triggered successfully (HTTP $status)."
   else
     log "ERROR: Reload failed (HTTP $status). You might need to reload manually via UI."

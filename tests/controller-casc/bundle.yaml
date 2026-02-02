@@ -1,0 +1,14 @@
+apiVersion: "2"
+id: "controller"
+description: "Controller bundle descriptor"
+version: "2"
+jcasc:
+  - "jenkins.yaml"
+# variables:
+#   - "variables.yaml"
+plugins:
+  - "plugins.yaml"
+#items:
+#  - "items.yaml"
+#rbac:
+#  - "rbac.yaml"

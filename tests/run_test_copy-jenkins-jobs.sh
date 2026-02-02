@@ -24,13 +24,13 @@ log "Running the copy-jenkins-jobs-scp.sh script"
   --job-path "$TEST_JOB_SIMPLE_NAME" \
   --job-path "$TEST_JOB_MB_NAME" \
   --jenkins-user "$JENKINS_ADMIN_USER" \
-  --jenkins-token "$JENKINS_ADMIN_TOKEN" \
+  --jenkins-token "$JENKINS_ADMIN_TOKEN_TARGET" \
   --jenkins-url-target "$TARGET_JENKINS_URL" \
   --verbose \
   --force
 
 # Reload Jenkins configuration on target to pick up changes
-reload_jenkins "$TARGET_JENKINS_URL"
+reload_jenkins  "$TARGET_JENKINS_URL" "$JENKINS_ADMIN_USER" "$JENKINS_ADMIN_TOKEN_TARGET"
 
 # Verify the copy result
 verify_result "$TEST_JOB_SIMPLE_NAME"

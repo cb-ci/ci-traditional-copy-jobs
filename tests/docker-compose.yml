@@ -9,10 +9,9 @@ services:
       - "2221:22" # SSH
     volumes:
       - ${CONTROLLER_JENKINS_HOMES_PATH}/jenkins_source_home:/var/jenkins_home
-      - ./init-admin.groovy:/usr/share/jenkins/ref/init.groovy.d/init-admin.groovy:ro
+      - ./jenkins_init.groovy.d/init_user.groovy:/usr/share/jenkins/ref/init.groovy.d/init_user.groovy:ro
     environment:
       - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
-
   jenkins-target:
     build:
       context: .
@@ -23,10 +22,9 @@ services:
       - "2222:22" # SSH
     volumes:
       - ${CONTROLLER_JENKINS_HOMES_PATH}/jenkins_target_home:/var/jenkins_home
-      - ./init-admin.groovy:/usr/share/jenkins/ref/init.groovy.d/init-admin.groovy:ro
+      - ./jenkins_init.groovy.d/init_user.groovy:/usr/share/jenkins/ref/init.groovy.d/init_user.groovy:ro
     environment:
       - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
-
 volumes:
   jenkins_source_home:
   jenkins_target_home:

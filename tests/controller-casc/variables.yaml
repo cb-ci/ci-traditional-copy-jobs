@@ -1,0 +1,5 @@
+variables:
+- name: "JENKINS_UPDATECENTER_URL"
+  value: "${JENKINS_UPDATECENTER_URL}"
+- name: "CONTROLLER_URL"
+  value: "${CONTROLLER_URL}"

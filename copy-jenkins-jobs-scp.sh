@@ -247,9 +247,10 @@ for job_path in "${JOB_PATHS[@]}"; do
   # shellcheck disable=SC2086
   ssh $SSH_OPTS_TARGET "$TARGET_USER@$TARGET_HOST" \
     "${SUDO} mkdir -p '$target_parent_dir' && \
-     ${SUDO} tar -xzpf '$TEMP_FILES_TARGET' -C '$target_parent_dir' && \
-     ${SUDO} chown -R '$JENKINS_OWNER:$JENKINS_OWNER' '$full_target_path'"
-  
+     ${SUDO} tar -xzf '$TEMP_FILES_TARGET' -C '$target_parent_dir'"
+    #  ${SUDO} chown -R '$JENKINS_OWNER:$JENKINS_OWNER' '$JENKINS_HOME_PATH/jobs/' && \
+    #  ${SUDO} chmod -R 755 $JENKINS_HOME_PATH/jobs/'"
+     
   log "Successfully copied job '$job_path'."
   COPIED_COUNT=$((COPIED_COUNT + 1))
 done

@@ -1,0 +1,6 @@
+plugins:
+- id: antisamy-markup-formatter
+- id: multibranch-scan-webhook-trigger
+- id: gitlab-plugin
+
+

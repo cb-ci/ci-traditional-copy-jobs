@@ -12,6 +12,8 @@
 #
 
 set -e  # Exit on error
+#set -x
+
 
 # --- Configuration Loading ---
 # Try to source set-test-env.sh from CWD or script directory if available
@@ -23,24 +25,22 @@ elif [ -f "$(dirname "$0")/tests/set-test-env.sh" ]; then
     source "$(dirname "$0")/tests/set-test-env.sh"
 fi
 
+
 # Ensure mandatory variables are set (either via source or env)
 : "${TARGET_JENKINS_URL:? "TARGET_JENKINS_URL must be set"}"
 : "${JENKINS_ADMIN_USER:? "JENKINS_ADMIN_USER must be set"}"
-: "${JENKINS_ADMIN_TOKEN:? "JENKINS_ADMIN_TOKEN must be set"}"
+: "${JENKINS_ADMIN_TOKEN_TARGET:? "JENKINS_ADMIN_TOKEN_TARGET must be set"}"
 : "${MY_NEW_TOKEN:? "MY_NEW_TOKEN must be set"}"
 : "${TARGET_SSH_OPTS:? "TARGET_SSH_OPTS must be set"}"
+# export TARGET_SSH_OPTS="-o -p 22 StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ./id_rsa"
 
 # --- Token Encryption ---
 
-if [ ! -f "$JENKINS_CLI_JAR" ]; then
-    log "Downloading jenkins-cli.jar..."
-    curl -o "$JENKINS_CLI_JAR" -s "$TARGET_JENKINS_URL/jnlpJars/jenkins-cli.jar"
-    chmod +x "$JENKINS_CLI_JAR"
-fi
-
-log "Encrypting new token using Jenkins CLI..."
-MY_NEW_TOKEN_ENCRYPTED=$(echo "println(hudson.util.Secret.fromString('$MY_NEW_TOKEN').getEncryptedValue())" | \
-java -jar "$JENKINS_CLI_JAR" -s "$TARGET_JENKINS_URL" -auth "${JENKINS_ADMIN_USER}:${JENKINS_ADMIN_TOKEN}" groovy =)
+log "Encrypting new token using Jenkins Script Console API..."
+MY_NEW_TOKEN_ENCRYPTED=$(curl -v -X POST \
+  -u "${JENKINS_ADMIN_USER}:${JENKINS_ADMIN_TOKEN_TARGET}" \
+  --data-urlencode "script=println(hudson.util.Secret.fromString('${MY_NEW_TOKEN}').getEncryptedValue())" \
+  "${TARGET_JENKINS_URL}/scriptText")
 
 log "Encrypted token: $MY_NEW_TOKEN_ENCRYPTED"
 
