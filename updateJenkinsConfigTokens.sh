@@ -12,19 +12,12 @@
 #
 
 set -e  # Exit on error
-#set -x
 
 
-# --- Configuration Loading ---
-# Try to source set-test-env.sh from CWD or script directory if available
-if [ -f "./set-test-env.sh" ]; then
-    source ./set-test-env.sh
-elif [ -f "$(dirname "$0")/set-test-env.sh" ]; then
-    source "$(dirname "$0")/set-test-env.sh"
-elif [ -f "$(dirname "$0")/tests/set-test-env.sh" ]; then
-    source "$(dirname "$0")/tests/set-test-env.sh"
-fi
-
+log() {
+  echo ""
+  echo ">>> $1"
+}
 
 # Ensure mandatory variables are set (either via source or env)
 : "${TARGET_JENKINS_URL:? "TARGET_JENKINS_URL must be set"}"
