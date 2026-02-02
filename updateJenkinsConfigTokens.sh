@@ -35,7 +35,7 @@ fi
 : "${SSH_USER:? "SSH_USER must be set"}"
 : "${TEST_HOST:? "TEST_HOST must be set"}"  
 : "${JENKINS_HOME_PATH:? "JENKINS_HOME_PATH must be set"}"      
-: "${SUDO:? "SUDO must be set"}"      
+#: "${SUDO:? "SUDO must be set"}"      
 # export TARGET_SSH_OPTS="-o -p 22 StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ./id_rsa"
 
 # --- Token Encryption ---
