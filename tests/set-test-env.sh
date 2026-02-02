@@ -41,6 +41,10 @@ export JENKINS_ADMIN_USER="admin"
 export JENKINS_ADMIN_PASSWORD="admin"
 #export JENKINS_OWNER="cloudbees-core-cm" # User that owns files inside the container
 export JENKINS_OWNER="root" # User that owns files inside the container
+# Get the admin tokens from the source and target Jenkins controllers
+export JENKINS_ADMIN_TOKEN_SOURCE='source_token'
+export JENKINS_ADMIN_TOKEN_TARGET='target_token'
+
 
 # --- Configuration: Job Names ---
 export TEST_JOB_MB_NAME="test-job-mb"
