@@ -4,7 +4,7 @@ set -e
 # --- Configuration: Environment ---
 export TEST_HOST="localhost"
 export SSH_USER="root"
-export SUDO="" # Set to "sudo" if needed
+export SUDO="" # Set to "sudo -i " if needed
 
 # --- Configuration: Paths ---
 # Use absolute path for scripts and test data relative to this script's directory
@@ -145,9 +145,10 @@ init() {
     done
 
     # Get the admin tokens from the source and target Jenkins controllers
+    set -x
     export JENKINS_ADMIN_TOKEN_SOURCE=$(docker exec "$SOURCE_CONTAINER_NAME" cat "$JENKINS_HOME_PATH/tmp_token.txt")
     export JENKINS_ADMIN_TOKEN_TARGET=$(docker exec "$TARGET_CONTAINER_NAME" cat "$JENKINS_HOME_PATH/tmp_token.txt")
-    
+    set +x
     # Configure SSH access inside containers
     log "Deploying SSH public keys to containers..."
     for container in "$SOURCE_CONTAINER_NAME" "$TARGET_CONTAINER_NAME"; do
