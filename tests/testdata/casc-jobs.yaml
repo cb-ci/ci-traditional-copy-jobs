@@ -1,0 +1,162 @@
+kind: folder
+name: GL-TEST
+description: ''
+displayName: GL-TEST
+items:
+- kind: multibranch
+  name: MBGL
+  displayName: group1 / project2
+  orphanedItemStrategy:
+    defaultOrphanedItemStrategy:
+      pruneDeadBranches: true
+      daysToKeep: -1
+      numToKeep: -1
+      abortBuilds: false
+  projectFactory:
+    workflowBranchProjectFactory:
+      scriptPath: Jenkinsfile
+  properties:
+  - folderCredentialsProperty:
+      folderCredentials:
+      - credentials:
+        - usernamePassword:
+            password: '{XXX=}'
+            description: gl-username-pat:XXX
+            id: gl-username-pat
+            usernameSecret: false
+            username: acaternberg
+        domain: {
+          }
+  - envVars: {
+      }
+  sourcesList:
+  - branchSource:
+      source:
+        gitlab:
+          traits:
+          - gitLabBranchDiscovery:
+              strategyId: 1
+          - gitLabOriginDiscovery:
+              strategyId: 1
+          - gitLabForkDiscovery:
+              trust:
+                gitLabTrustPermissions: {
+                  }
+              strategyId: 1
+              buildMRForksNotMirror: false
+          - WebhookListenerBuildConditionsTrait:
+              alwaysBuildMROpen: true
+              alwaysIgnoreNonCodeRelatedUpdates: false
+              alwaysBuildMRReOpen: true
+              alwaysIgnoreMRApproved: false
+              alwaysIgnoreMRUnApproved: false
+              alwaysIgnoreMRWorkInProgress: false
+              alwaysIgnoreMRApproval: false
+              alwaysIgnoreMRUnApproval: false
+          projectPath: group16860950/project2
+          serverName: default
+          projectOwner: group16860950
+          credentialsId: gl-username-pat
+          id: '1'
+          projectId: 77113883
+      strategy:
+        allBranchesSame: {
+          }
+- kind: pipeline
+  name: Project2
+  concurrentBuild: true
+  definition:
+    cpsScmFlowDefinition:
+      scriptPath: Jenkinsfile
+      scm:
+        scmGit:
+          userRemoteConfigs:
+          - userRemoteConfig:
+              credentialsId: gl-username-pat
+              url: https://gitlab.com/group16860950/project2.git
+          branches:
+          - branchSpec:
+              name: '*/main'
+      lightweight: true
+  description: ''
+  disabled: false
+  displayName: Project2
+  properties:
+  - gitLabConnection:
+      useAlternativeCredential: false
+      jobCredentialId: ''
+      gitLabConnection: gitlab
+  - pipelineTriggers:
+      triggers:
+      - gitlab:
+          triggerOnAcceptedMergeRequest: false
+          cancelPendingBuildsOnUpdate: false
+          setBuildDescription: true
+          triggerOnlyIfNewCommitsPushed: false
+          acceptMergeRequestOnSuccess: false
+          secretToken: MYSECRET
+          addNoteOnMergeRequest: false
+          skipWorkInProgressMergeRequest: false
+          branchFilterType: All
+          triggerOnPipelineEvent: false
+          triggerOnPush: true
+          triggerOnApprovedMergeRequest: false
+          addVoteOnMergeRequest: false
+          triggerOnClosedMergeRequest: false
+          triggerOnNoteRequest: true
+          labelsThatForcesBuildIfAdded: ''
+          triggerToBranchDeleteRequest: false
+          ciSkip: true
+          noteRegex: ''
+          addCiMessage: false
+          triggerOnMergeRequest: true
+  resumeBlocked: false
+- kind: pipeline
+  name: SimpleTriger
+  concurrentBuild: true
+  definition:
+    cpsScmFlowDefinition:
+      scriptPath: Jenkinsfile
+      scm:
+        scmGit:
+          userRemoteConfigs:
+          - userRemoteConfig:
+              credentialsId: gl-username-pat
+              url: https://gitlab.com/group16860950/project2.git
+          branches:
+          - branchSpec:
+              name: '*/main'
+      lightweight: true
+  description: ''
+  disabled: false
+  displayName: SimpleTriger
+  properties:
+  - gitLabConnection:
+      useAlternativeCredential: false
+      jobCredentialId: ''
+      gitLabConnection: gitlab
+  - pipelineTriggers:
+      triggers:
+      - gitlab:
+          triggerOnAcceptedMergeRequest: false
+          cancelPendingBuildsOnUpdate: false
+          setBuildDescription: true
+          triggerOnlyIfNewCommitsPushed: false
+          acceptMergeRequestOnSuccess: false
+          secretToken: MYSECRET
+          addNoteOnMergeRequest: false
+          skipWorkInProgressMergeRequest: false
+          branchFilterType: All
+          triggerOnPipelineEvent: false
+          triggerOnPush: true
+          triggerOnApprovedMergeRequest: false
+          addVoteOnMergeRequest: false
+          triggerOnClosedMergeRequest: false
+          triggerOnNoteRequest: true
+          labelsThatForcesBuildIfAdded: ''
+          triggerToBranchDeleteRequest: false
+          ciSkip: true
+          noteRegex: ''
+          addCiMessage: false
+          triggerOnMergeRequest: true
+  resumeBlocked: false
