@@ -13,10 +13,12 @@ DEFAULT_YAML_FILE="../tests/testdata/casc-jobs.yaml"
 # --- Environment Configuration ---
 # Ideally, set these in your environment or a .env file.
 # We use defaults here to maintain compatibility with the original script's flow.
+GITLAB_SERVER="${GITLAB_SERVER:-gitlab.com}"
 GITLAB_TOKEN="${GITLAB_TOKEN:-glpat-YOUR_TOKEN}"
 WEBHOOK_SECRET="${WEBHOOK_SECRET:-$(openssl rand -base64 32)}"
 WEBHOOK_REFERENCE_URL_PREFIX="${WEBHOOK_REFERENCE_URL_PREFIX:-https://ci.sourcecontroller.com}"
 WEBHOOK_TARGET_URL_PREFIX="${WEBHOOK_TARGET_URL_PREFIX:-https://ci.targetcontroller.com}"
+
 
 # --- Colors for Output ---
 RED='\033[0;31m'
@@ -150,7 +152,7 @@ process_repo() {
     local url="$1"
     # Extract project path (e.g., group/repo) from URL
     local repo_path
-    repo_path=$(echo "$url" | sed -E 's|.*gitlab\.com[:/](.*)\.git$|\1|')
+    repo_path=$(echo "$url" | sed -E "s|.*${GITLAB_SERVER}[:/](.*)\.git$|\1|")
     local encoded_project=$(echo "$repo_path" | sed 's|/|%2F|g')
 
     log "--------------------------------------------------"
@@ -171,6 +173,18 @@ process_repo() {
     fi
 
     for ref_id in $ref_hook_ids; do
+        # Calculate target URL to check for duplicates
+        local ref_url
+        ref_url=$(echo "$hooks_list" | jq -r ".[] | select(.id == $ref_id) | .url")
+        local ref_uri
+        ref_uri=$(echo "$ref_url" | sed -E "s|^${WEBHOOK_REFERENCE_URL_PREFIX}||")
+        local target_url="${WEBHOOK_TARGET_URL_PREFIX}${ref_uri}"
+
+        if echo "$hooks_list" | jq -e ".[] | select(.url == \"$target_url\")" > /dev/null; then
+            success "Hook already exists for $repo_path: $target_url. Skipping."
+            continue
+        fi
+
         log "Syncing hook (Ref ID: $ref_id)..."
         local payload
         payload=$(create_hook_payload "$hooks_list" "$ref_id" "$WEBHOOK_TARGET_URL_PREFIX" "$WEBHOOK_SECRET")
@@ -201,7 +215,7 @@ while IFS= read -r url; do
     [[ -n "$url" ]] && URLS+=("$url")
 done < <( (
     # Extract from multibranch projects
-    yq eval '.items[] | select(.kind == "multibranch") | .sourcesList[].branchSource.source.gitlab | select(. != null) | "https://gitlab.com/" + .projectPath + ".git"' "$YAML_FILE"
+    yq eval ".items[] | select(.kind == \"multibranch\") | .sourcesList[].branchSource.source.gitlab | select(. != null) | \"https://${GITLAB_SERVER}/\" + .projectPath + \".git\"" "$YAML_FILE"
     # Extract from standard pipeline projects
     yq eval '.items[] | select(.kind == "pipeline") | .definition.cpsScmFlowDefinition.scm.scmGit.userRemoteConfigs[].userRemoteConfig.url' "$YAML_FILE"
 ) | sort | uniq | grep -v 'null' || true )
