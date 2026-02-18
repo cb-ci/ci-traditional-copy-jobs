@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Script to parse Git URLs from multibranch and pipeline projects in a YAML file
-# and synchronize GitLab project hooks.
-# Usage: ./scanRepos.sh [path-to-yaml-file]
+# and update/add new GitLab project hooks.
+# Usage: ./updateGitlabHooks.sh [path-to-yaml-file]
 
 set -euo pipefail
 
@@ -18,6 +18,7 @@ GITLAB_TOKEN="${GITLAB_TOKEN:-glpat-YOUR_TOKEN}"
 WEBHOOK_SECRET="${WEBHOOK_SECRET:-$(openssl rand -base64 32)}"
 WEBHOOK_REFERENCE_URL_PREFIX="${WEBHOOK_REFERENCE_URL_PREFIX:-https://ci.sourcecontroller.com}"
 WEBHOOK_TARGET_URL_PREFIX="${WEBHOOK_TARGET_URL_PREFIX:-https://ci.targetcontroller.com}"
+
 
 
 # --- Colors for Output ---
