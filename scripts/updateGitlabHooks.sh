@@ -6,6 +6,10 @@
 
 set -euo pipefail
 
+if [[ -f .env ]]; then
+    source .env
+fi
+
 # --- Constants & Defaults ---
 API_URL="${API_URL:-https://gitlab.com/api/v4}"
 DEFAULT_YAML_FILE="../tests/testdata/casc-jobs.yaml"
