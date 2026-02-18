@@ -11,16 +11,24 @@ if [[ -f .env ]]; then
 fi
 
 # --- Constants & Defaults ---
+# API_URL is the base URL for the GitLab API.
 API_URL="${API_URL:-https://gitlab.com/api/v4}"
+# DEFAULT_YAML_FILE is the path to the YAML file to parse. 
 DEFAULT_YAML_FILE="../tests/testdata/casc-jobs.yaml"
 
 # --- Environment Configuration ---
 # Ideally, set these in your environment or a .env file.
 # We use defaults here to maintain compatibility with the original script's flow.
+
+# GITLAB_SERVER is the hostname of your GitLab instance.
 GITLAB_SERVER="${GITLAB_SERVER:-gitlab.com}"
+# GITLAB_TOKEN is a Personal Access Token with API scope.
 GITLAB_TOKEN="${GITLAB_TOKEN:-glpat-YOUR_TOKEN}"
+# WEBHOOK_SECRET is the secret token to be set on the new webhooks.
 WEBHOOK_SECRET="${WEBHOOK_SECRET:-$(openssl rand -base64 32)}"
+# WEBHOOK_REFERENCE_URL_PREFIX is the URL prefix of the source Jenkins controller hooks to copy.
 WEBHOOK_REFERENCE_URL_PREFIX="${WEBHOOK_REFERENCE_URL_PREFIX:-https://ci.sourcecontroller.com}"
+# WEBHOOK_TARGET_URL_PREFIX is the URL prefix for the new Jenkins controller.
 WEBHOOK_TARGET_URL_PREFIX="${WEBHOOK_TARGET_URL_PREFIX:-https://ci.targetcontroller.com}"
 
 
@@ -39,6 +47,7 @@ success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
 warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error() { echo -e "${RED}[ERROR]${NC} $1" >&2; }
 
+# check_requirements checks if the required commands are installed.
 check_requirements() {
     local missing=()
     for cmd in yq jq curl openssl; do
@@ -54,6 +63,7 @@ check_requirements() {
     fi
 }
 
+# validate_env validates the environment variables.
 validate_env() {
     if [[ -z "$GITLAB_TOKEN" ]]; then
         error "GITLAB_TOKEN is not set."
@@ -70,12 +80,14 @@ validate_env() {
     log "Target Prefix: $WEBHOOK_TARGET_URL_PREFIX"
 }
 
+# get_project_hooks gets the hooks for a project.
 get_project_hooks() {
     local encoded_project="$1"
     curl --silent --fail --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
         "$API_URL/projects/$encoded_project/hooks"
 }
 
+# create_hook_payload creates a hook payload from a reference hook.
 create_hook_payload() {
     local list_body="$1"
     local ref_hook_id="$2"
@@ -132,6 +144,7 @@ create_hook_payload() {
     echo "$payload"
 }
 
+# add_hook_to_project adds a hook to a project.
 add_hook_to_project() {
     local encoded_project="$1"
     local payload="$2"
@@ -153,6 +166,7 @@ add_hook_to_project() {
     fi
 }
 
+# process_repo processes a single repository URL.
 process_repo() {
     local url="$1"
     # Extract project path (e.g., group/repo) from URL
@@ -205,8 +219,10 @@ process_repo() {
 
 # --- Main Script Execution ---
 
+# check_requirements checks if the required commands are installed.
 check_requirements
 
+# YAML_FILE is the path to the YAML file to parse.
 YAML_FILE="${1:-$DEFAULT_YAML_FILE}"
 if [[ ! -f "$YAML_FILE" ]]; then
     error "YAML file not found: $YAML_FILE"
