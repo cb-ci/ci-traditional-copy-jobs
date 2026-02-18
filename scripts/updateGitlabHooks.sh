@@ -80,10 +80,10 @@ create_hook_payload() {
     # Extract the URI from the reference hook and append it to the target prefix
     local ref_url
     ref_url=$(echo "$list_body" | jq -r ".[] | select(.id == $ref_hook_id) | .url")
-    
+    # Remove the reference prefix from the URL
     local ref_uri
     ref_uri=$(echo "$ref_url" | sed -E "s|^${WEBHOOK_REFERENCE_URL_PREFIX}||")
-    
+    # Add the target prefix to the URI
     local target_url="${target_prefix}${ref_uri}"
 
     # Build payload by selecting the reference hook and updating the URL
@@ -130,7 +130,7 @@ create_hook_payload() {
 add_hook_to_project() {
     local encoded_project="$1"
     local payload="$2"
-
+    # Add the hook to the project
     local response
     response=$(curl --silent --write-out "\n %{http_code}" \
         --request POST \
@@ -163,7 +163,7 @@ process_repo() {
         error "Could not fetch hooks for $repo_path. Check your token or project path."
         return
     fi
-
+    # Get all hook IDs that start with the reference prefix
     local ref_hook_ids
     ref_hook_ids=$(echo "$hooks_list" | jq -r ".[] | select(.url | startswith(\"$WEBHOOK_REFERENCE_URL_PREFIX\")) | .id")
 
@@ -171,13 +171,15 @@ process_repo() {
         warn "No reference hooks found for $repo_path"
         return
     fi
-
+    # Iterate over all hook IDs that start with the reference prefix
     for ref_id in $ref_hook_ids; do
         # Calculate target URL to check for duplicates
         local ref_url
         ref_url=$(echo "$hooks_list" | jq -r ".[] | select(.id == $ref_id) | .url")
+        # Remove the reference prefix from the URL
         local ref_uri
         ref_uri=$(echo "$ref_url" | sed -E "s|^${WEBHOOK_REFERENCE_URL_PREFIX}||")
+        # Add the target prefix to the URI
         local target_url="${WEBHOOK_TARGET_URL_PREFIX}${ref_uri}"
 
         if echo "$hooks_list" | jq -e ".[] | select(.url == \"$target_url\")" > /dev/null; then
@@ -186,9 +188,10 @@ process_repo() {
         fi
 
         log "Syncing hook (Ref ID: $ref_id)..."
+        # Create payload for the new hook
         local payload
         payload=$(create_hook_payload "$hooks_list" "$ref_id" "$WEBHOOK_TARGET_URL_PREFIX" "$WEBHOOK_SECRET")
-        
+        # Add the hook to the project
         if add_hook_to_project "$encoded_project" "$payload"; then
             success "Hook synchronized for $repo_path"
         fi
