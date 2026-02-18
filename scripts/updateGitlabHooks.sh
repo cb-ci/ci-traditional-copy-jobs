@@ -8,7 +8,7 @@ set -euo pipefail
 
 # --- Constants & Defaults ---
 API_URL="${API_URL:-https://gitlab.com/api/v4}"
-DEFAULT_YAML_FILE="tests/testdata/casc-jobs.yaml"
+DEFAULT_YAML_FILE="../tests/testdata/casc-jobs.yaml"
 
 # --- Environment Configuration ---
 # Ideally, set these in your environment or a .env file.
