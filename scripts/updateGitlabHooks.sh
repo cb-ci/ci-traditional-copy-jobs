@@ -188,7 +188,7 @@ process_repo() {
         local target_url="${WEBHOOK_TARGET_URL_PREFIX}${ref_uri}"
 
         if echo "$hooks_list" | jq -e ".[] | select(.url == \"$target_url\")" > /dev/null; then
-            success "Hook already exists for $repo_path: $target_url. Skipping."
+            warn "Hook already exists for $repo_path: $target_url. Skipping."
             continue
         fi
 
