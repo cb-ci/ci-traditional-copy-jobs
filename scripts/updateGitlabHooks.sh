@@ -234,15 +234,31 @@ validate_env
 log "Parsing URLs from: $YAML_FILE"
 
 # Extract and deduplicate Git URLs
+
+# this seems just to work under Macos, was not working under linux for unknown reasons
+# URLS=()
+# while IFS= read -r url; do
+#     [[ -n "$url" ]] && URLS+=("$url")
+# done < <( (
+#     # Extract from multibranch projects
+#     yq eval ".items[] | select(.kind == \"multibranch\") | .sourcesList[].branchSource.source.gitlab | select(. != null) | \"https://${GITLAB_SERVER}/\" + .projectPath + \".git\"" "$YAML_FILE"
+#     # Extract from standard pipeline projects
+#     yq eval '.items[] | select(.kind == "pipeline") | .definition.cpsScmFlowDefinition.scm.scmGit.userRemoteConfigs[].userRemoteConfig.url' "$YAML_FILE"
+# ) | sort | uniq | grep -v 'null' || true )
+
 URLS=()
 while IFS= read -r url; do
     [[ -n "$url" ]] && URLS+=("$url")
-done < <( (
-    # Extract from multibranch projects
-    yq eval ".items[] | select(.kind == \"multibranch\") | .sourcesList[].branchSource.source.gitlab | select(. != null) | \"https://${GITLAB_SERVER}/\" + .projectPath + \".git\"" "$YAML_FILE"
-    # Extract from standard pipeline projects
-    yq eval '.items[] | select(.kind == "pipeline") | .definition.cpsScmFlowDefinition.scm.scmGit.userRemoteConfigs[].userRemoteConfig.url' "$YAML_FILE"
-) | sort | uniq | grep -v 'null' || true )
+done < <( 
+    awk '/projectPath:/ {
+        gsub(/["|,]/, "", $2)
+        print "https://'"${GITLAB_SERVER}"'/" $2 ".git"
+    } 
+    /url:/ && /http/ {
+        gsub(/["|,]/, "", $2)
+        print $2
+    }' "$YAML_FILE" | sort | uniq 
+)
 
 if [ ${#URLS[@]} -eq 0 ]; then
     warn "No valid Git URLs found in $YAML_FILE"
