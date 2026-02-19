@@ -42,13 +42,7 @@ verify_result "$TEST_JOB_MB_NAME"
 log "Updating webhook tokens..."
 "$PROJECT_ROOT/updateJenkinsConfigTokens.sh"
 
-# Update GitLab hooks
-cd /Users/acaternberg/projects/gitlab-cli-manage-hooks
-source ./set-env.sh
-./hook-addOrUpdate.sh \
-  --gitlab-url "$GITLAB_URL" \
-  --gitlab-token "$GITLAB_TOKEN" \
-  --project-id "$PROJECT_ID" \
-  --hook-url "$HOOK_URL" \
-  --hook-token "$MY_NEW_TOKEN" \
-  --verbose
+# Optional: Update GitLab hooks
+# TODO: Implement updateGitHubHooks.sh
+# cd ../scripts
+# ./updateGitlabHooks.sh
